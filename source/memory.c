@@ -73,7 +73,7 @@ uint32_t save_backup();
 int32_t parse_config_line(char *current_line, char *current_variable, char *current_value);
 int32_t load_game_config(char *gamepak_title, char *gamepak_code, char *gamepak_maker);
 char *skip_spaces(char *line_ptr);
-static int32_t load_gamepak_raw(const char* name);
+static ssize_t load_gamepak_raw(const char* name);
 uint32_t evict_gamepak_page();
 void init_memory_gamepak();
 
@@ -2498,28 +2498,28 @@ static bool lookup_game_config(char *gamepak_title, char *gamepak_code, char *ga
 	char current_variable[256];
 	char current_value[256];
 
-	while(fgets(current_line, 256, config_file))
+	while(FILE_GETS(current_line, 256, config_file))
 	{
 		if(parse_config_line(current_line, current_variable, current_value) != -1)
 		{
 			if(strcasecmp(current_variable, "game_name") != 0 || strcasecmp(current_value, gamepak_title) != 0)
 				continue;
 
-			if(!fgets(current_line, 256, config_file) || (parse_config_line(current_line, current_variable, current_value) == -1) ||
+			if(!FILE_GETS(current_line, 256, config_file) || (parse_config_line(current_line, current_variable, current_value) == -1) ||
 			   strcasecmp(current_variable, "game_code") != 0 || strcasecmp(current_value, gamepak_code) != 0)
 				continue;
 
-			if(!fgets(current_line, 256, config_file) || (parse_config_line(current_line, current_variable, current_value) == -1) ||
+			if(!FILE_GETS(current_line, 256, config_file) || (parse_config_line(current_line, current_variable, current_value) == -1) ||
 			   strcasecmp(current_variable, "vender_code") != 0 || strcasecmp(current_value, gamepak_maker) != 0)
 				continue;
 
-			while(fgets(current_line, 256, config_file))
+			while(FILE_GETS(current_line, 256, config_file))
 			{
 				if(parse_config_line(current_line, current_variable, current_value) != -1)
 				{
 					if(!strcasecmp(current_variable, "game_name"))
 					{
-						fclose(config_file);
+						FILE_CLOSE(config_file);
 						return 0;
 					}
 

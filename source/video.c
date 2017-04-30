@@ -2420,7 +2420,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
 
 // Render all layers as they appear in the layer order.
 
-#define render_layers(tile_alpha, obj_alpha, dest)                            \
+#define render_layers(tile_alpha, obj_alpha, dest, unused_arg)                \
 {                                                                             \
   current_layer = layer_order[0];                                             \
   if(current_layer & 0x04)                                                    \
@@ -2477,7 +2477,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         {                                                                     \
           if(alpha_condition)                                                 \
           {                                                                   \
-            renderer(alpha, alpha_obj, screen_buffer);                        \
+            renderer(alpha, alpha_obj, screen_buffer, 1);                     \
             expand_blend(screen_buffer, scanline, _start, _end);              \
             return;                                                           \
           }                                                                   \
@@ -2489,7 +2489,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         {                                                                     \
           if(fade_condition)                                                  \
           {                                                                   \
-            renderer(color32, partial_alpha, screen_buffer);                  \
+            renderer(color32, partial_alpha, screen_buffer, 2);               \
             expand_brighten_partial_alpha(screen_buffer, scanline,            \
              _start, _end);                                                   \
             return;                                                           \
@@ -2502,7 +2502,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         {                                                                     \
           if(fade_condition)                                                  \
           {                                                                   \
-            renderer(color32, partial_alpha, screen_buffer);                  \
+            renderer(color32, partial_alpha, screen_buffer, 3);               \
             expand_darken_partial_alpha(screen_buffer, scanline,              \
              _start, _end);                                                   \
             return;                                                           \
@@ -2511,7 +2511,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         }                                                                     \
       }                                                                       \
                                                                               \
-      renderer(color32, partial_alpha, screen_buffer);                        \
+      renderer(color32, partial_alpha, screen_buffer, 4);                     \
       expand_blend(screen_buffer, scanline, _start, _end);                    \
     }                                                                         \
     else                                                                      \
@@ -2525,7 +2525,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
           if(alpha_condition)                                                 \
           {                                                                   \
             uint32_t screen_buffer[240];                                      \
-            renderer(alpha, alpha_obj, screen_buffer);                        \
+            renderer(alpha, alpha_obj, screen_buffer, 5);                     \
             expand_blend(screen_buffer, scanline, _start, _end);              \
             return;                                                           \
           }                                                                   \
@@ -2537,7 +2537,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         {                                                                     \
           if(fade_condition)                                                  \
           {                                                                   \
-            renderer(color16, color16, scanline);                             \
+            renderer(color16, color16, scanline, 6);                          \
             expand_brighten(scanline, scanline, _start, _end);                \
             return;                                                           \
           }                                                                   \
@@ -2549,7 +2549,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         {                                                                     \
           if(fade_condition)                                                  \
           {                                                                   \
-            renderer(color16, color16, scanline);                             \
+            renderer(color16, color16, scanline, 7);                          \
             expand_darken(scanline, scanline, _start, _end);                  \
             return;                                                           \
           }                                                                   \
@@ -2557,7 +2557,7 @@ void expand_brighten_partial_alpha(uint32_t *screen_src_ptr, uint16_t *screen_de
         }                                                                     \
       }                                                                       \
                                                                               \
-      renderer(normal, normal, scanline);                                     \
+      renderer(normal, normal, scanline, 8);                                  \
       expand_normal(scanline, _start, _end);                                  \
     }                                                                         \
   }                                                                           \
@@ -2645,9 +2645,9 @@ void render_scanline_bitmap(uint16_t *scanline, uint32_t dispcnt)
 // Render layers from start to end based on if they're allowed in the
 // enable flags.
 
-#define render_layers_conditional(tile_alpha, obj_alpha, dest)                \
+#define render_layers_conditional(tile_alpha, obj_alpha, dest, num_skip)      \
 {                                                                             \
-  __label__ skip;                                                             \
+  __label__ skip##num_skip;                                                             \
   current_layer = layer_order[layer_order_pos];                               \
   /* If OBJ aren't enabled skip to the first non-OBJ layer */                 \
   if(!(enable_flags & 0x10))                                                  \
@@ -2661,7 +2661,7 @@ void render_scanline_bitmap(uint16_t *scanline, uint32_t dispcnt)
       if(layer_order_pos == layer_count)                                      \
       {                                                                       \
         fill_line_bg(tile_alpha, dest, start, end);                           \
-        goto skip;                                                            \
+        goto skip##num_skip;                                                            \
       }                                                                       \
     }                                                                         \
                                                                               \
@@ -2694,7 +2694,7 @@ void render_scanline_bitmap(uint16_t *scanline, uint32_t dispcnt)
       if(layer_order_pos == layer_count)                                      \
       {                                                                       \
         fill_line_bg(tile_alpha, dest, start, end);                           \
-        goto skip;                                                            \
+        goto skip##num_skip;                                                            \
       }                                                                       \
     }                                                                         \
                                                                               \
@@ -2732,7 +2732,7 @@ void render_scanline_bitmap(uint16_t *scanline, uint32_t dispcnt)
     }                                                                         \
   }                                                                           \
                                                                               \
-  skip:                                                                       \
+  skip##num_skip:                                                                       \
     ;                                                                         \
 }                                                                             \
 
