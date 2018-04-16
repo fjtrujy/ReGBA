@@ -22,6 +22,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+extern u8 gba_bios_bin[];
+extern int size_gba_bios_bin;
+
+int32_t load_bios_mem(u8* data, int size);
+
 TIMER_TYPE timer[4];
 
 frameskip_type current_frameskip_type = auto_frameskip;
@@ -167,14 +172,18 @@ int main(int argc, char *argv[])
 	
 	if(load_bios(file) == -1)
 	{
+		printf("No GBA BIOS was found.\n");
+
 		ReGBA_ProgressUpdate(2, 2);
 		ReGBA_ProgressFinalise();
 
-		ShowErrorScreen("The GBA BIOS was not found in location: "
+		/*ShowErrorScreen("The GBA BIOS was not found in location: "
 			"\n%s\n The file needs "
 			"to be named gba_bios.bin.", main_path);
 
-		error_quit();
+		error_quit();*/
+		
+		load_bios_mem(gba_bios_bin, size_gba_bios_bin);
 	}
 	else
 	{
@@ -186,8 +195,8 @@ int main(int argc, char *argv[])
 	init_sound();
 
 #ifdef HOST
-	argc = 2;
-	argv[1] = "host:rom/rom.gba";
+	//argc = 2;
+	//argv[1] = "host:rom/rom.gba";
 #endif
 
 	if(argc > 1)

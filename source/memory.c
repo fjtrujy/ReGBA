@@ -2747,6 +2747,16 @@ int32_t load_bios(const char* name)
 	return -1;
 }
 
+int32_t load_bios_mem(u8* data, int size)
+{
+	if (data) {
+		memcpy(bios.rom, data, 0x4000);
+		IsNintendoBIOS = false;
+		return 0;
+	}
+	return -1;
+}
+
 // DMA memory regions can be one of the following:
 // IWRAM - 32kb offset from the contiguous iwram region.
 // EWRAM - like segmented but with self modifying code check.

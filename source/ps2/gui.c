@@ -762,6 +762,12 @@ void ScreenPosSaveFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
 		*((uint32_t*) ActiveMenuEntry->Target));
 }
 
+void ScreenOverSaveFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
+{
+	snprintf(Value, 256, "%s = %d #Screen overscan\n", ActiveMenuEntry->PersistentName,
+		*((uint32_t*) ActiveMenuEntry->Target));
+}
+
 // -- Custom display --
 /*
 #define PAD_SELECT    0x0001
@@ -961,7 +967,11 @@ static void ScreenPosDisplayValue(struct MenuEntry* DrawnMenuEntry, struct MenuE
 		
 		CurrentScreenPosX = ScreenPosX;
     	CurrentScreenPosY = ScreenPosY;
-	}	
+	}
+	
+	/*if (ScreenOverscan != CurrentScreenOverscan) {
+		CurrentScreenOverscan = ScreenOverscan;
+	}*/
 }
 
 // -- Custom saving --
@@ -1436,6 +1446,8 @@ static void ActionScreenPosSetDefault(struct Menu** ActiveMenu, uint32_t* Active
 {
 	ScreenPosX = gsGlobal->StartX;
 	ScreenPosY = gsGlobal->StartY;
+	ScreenOverscanX = 99;
+	ScreenOverscanY = 99;
 }
 
 // -- Strut --
@@ -1714,7 +1726,7 @@ static struct MenuEntry PerGameDisplayMenu_MenuRes = {
 };
 
 static struct MenuEntry ScreenPos_PosX = {
-	.Kind = KIND_OPTION, .Name = "X:", .PersistentName = "xpos",
+	.Kind = KIND_OPTION, .Name = "Position X:", .PersistentName = "xpos",
 	.Target = &ScreenPosX,
 	.ChoiceCount = 1000,
 	.LoadFunction = ScreenPosLoadFunction,
@@ -1724,11 +1736,31 @@ static struct MenuEntry ScreenPos_PosX = {
 };
 
 static struct MenuEntry ScreenPos_PosY = {
-	.Kind = KIND_OPTION, .Name = "Y:", .PersistentName = "ypos",
+	.Kind = KIND_OPTION, .Name = "Position Y:", .PersistentName = "ypos",
 	.Target = &ScreenPosY,
 	.ChoiceCount = 1000,
 	.LoadFunction = ScreenPosLoadFunction,
 	.SaveFunction = ScreenPosSaveFunction,
+	/*.ButtonLeftFunction = SavedStateSelectionLeft, .ButtonRightFunction = SavedStateSelectionRight,*/
+	.DisplayValueFunction = ScreenPosDisplayValue
+};
+
+static struct MenuEntry ScreenOverscan_X = {
+	.Kind = KIND_OPTION, .Name = "Overscan X:", .PersistentName = "overx",
+	.Target = &ScreenOverscanX,
+	.ChoiceCount = 200,
+	.LoadFunction = ScreenPosLoadFunction,
+	.SaveFunction = ScreenOverSaveFunction,
+	/*.ButtonLeftFunction = SavedStateSelectionLeft, .ButtonRightFunction = SavedStateSelectionRight,*/
+	.DisplayValueFunction = ScreenPosDisplayValue
+};
+
+static struct MenuEntry ScreenOverscan_Y = {
+	.Kind = KIND_OPTION, .Name = "Overscan Y:", .PersistentName = "overy",
+	.Target = &ScreenOverscanY,
+	.ChoiceCount = 200,
+	.LoadFunction = ScreenPosLoadFunction,
+	.SaveFunction = ScreenOverSaveFunction,
 	/*.ButtonLeftFunction = SavedStateSelectionLeft, .ButtonRightFunction = SavedStateSelectionRight,*/
 	.DisplayValueFunction = ScreenPosDisplayValue
 };
@@ -1739,17 +1771,17 @@ static struct MenuEntry ScreenPos_SetDefault = {
 };
 
 static struct Menu ScreenPos = {
-	.Parent = &DisplayMenu, .Title = "Screen position",
+	.Parent = &DisplayMenu, .Title = "Screen settings",
 	/*.InitFunction = ScreenPosInit, .EndFunction = ScreenPosEnd,*/
 	/*.DisplayDataFunction = SavedStateMenuDisplayData,*/
-	.Entries = { &ScreenPos_PosX, &ScreenPos_PosY, &Strut, &ScreenPos_SetDefault, NULL }
+	.Entries = { &ScreenPos_PosX, &ScreenPos_PosY, &ScreenOverscan_X, &ScreenOverscan_Y, &Strut, &ScreenPos_SetDefault, NULL }
 };
 
 static struct MenuEntry PerGameDisplayMenu_ScreenPos = {
-	ENTRY_SUBMENU("Screen position", &ScreenPos)
+	ENTRY_SUBMENU("Screen settings", &ScreenPos)
 };
 static struct MenuEntry DisplayMenu_ScreenPos = {
-	ENTRY_SUBMENU("Screen position", &ScreenPos)
+	ENTRY_SUBMENU("Screen settings", &ScreenPos)
 };
 
 
