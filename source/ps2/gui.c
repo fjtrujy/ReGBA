@@ -1321,7 +1321,7 @@ void CheatsMenuSaveFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
 	if (g_num_cheats > 0)
 	{
 		for(i = 0; i < 32; i++)
-			CheatsSettings |= current_cheats_flag[i].cheat_active >> i & 1;
+			CheatsSettings |= current_cheats_flag[i].cheat_active << i;
 	}
 	
 	snprintf(Value, 256, "%s = %d #cheats\n", ActiveMenuEntry->PersistentName, CheatsSettings);
