@@ -214,7 +214,6 @@ int main(int argc, char *argv[])
 		{
 			char FileNameNoExt[MAX_PATH + 1];
 			GetFileNameNoExtension(FileNameNoExt, CurrentGamePath);
-			printf("filenmae %s\n", FileNameNoExt);
 #ifdef CHEATS
 			add_cheats(FileNameNoExt);
 #endif
