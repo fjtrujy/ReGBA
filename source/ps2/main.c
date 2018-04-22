@@ -50,8 +50,6 @@ u32 last_frame = 0;
 
 u32 synchronize_flag = 1;
 
-char executable_path[MAX_PATH + 1];
-
 #define check_count(count_var)																\
 	if(count_var < execute_cycles)															\
 		execute_cycles = count_var;															\
@@ -195,8 +193,8 @@ int main(int argc, char *argv[])
 	init_sound();
 
 #ifdef HOST
-	//argc = 2;
-	//argv[1] = "host:rom/rom.gba";
+	argc = 2;
+	argv[1] = "host:Dragon Ball Z - Buu's Fury.zip";
 #endif
 
 	if(argc > 1)
@@ -216,6 +214,10 @@ int main(int argc, char *argv[])
 		{
 			char FileNameNoExt[MAX_PATH + 1];
 			GetFileNameNoExtension(FileNameNoExt, CurrentGamePath);
+			printf("filenmae %s\n", FileNameNoExt);
+#ifdef CHEATS
+			add_cheats(FileNameNoExt);
+#endif
 			ReGBA_LoadSettings(FileNameNoExt, true);
 		}
 
@@ -230,8 +232,8 @@ loadrom:
 	
 		if(load_file(file_ext, load_filename) == -1)
 		{
-		if(ReGBA_Menu(REGBA_MENU_ENTRY_REASON_NO_ROM))
-		goto loadrom;
+			if(ReGBA_Menu(REGBA_MENU_ENTRY_REASON_NO_ROM))
+				goto loadrom;
 		}
 		else
 		{
@@ -240,6 +242,16 @@ loadrom:
 				ShowErrorScreen("Failed to load gamepak %s, exiting.\n", load_filename);
 				ps2delay(5);
 				goto loadrom;
+			}
+			
+			if (IsGameLoaded)
+			{
+				char FileNameNoExt[MAX_PATH + 1];
+				GetFileNameNoExtension(FileNameNoExt, CurrentGamePath);
+#ifdef CHEATS
+				add_cheats(FileNameNoExt);
+#endif
+				ReGBA_LoadSettings(FileNameNoExt, true);
 			}
 
 			init_cpu(ResolveSetting(BootFromBIOS, PerGameBootFromBIOS) /* in port.c */);
@@ -357,7 +369,7 @@ u32 update_gba()
 
 					ReGBA_RenderScreen();
 					update_backup();
-#if 0
+#ifdef CHEATS
 					process_cheats();
 #endif
 

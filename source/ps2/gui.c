@@ -32,6 +32,7 @@
 #define FRAME_COLOR            RGB888_TO_RGB565(0,200,100)
 #define COLOR_FILE			   RGB888_TO_RGB565(0x10,0xFF,0x10);
 #define COLOR_FILE_OUTLINE     RGB888_TO_RGB565(0, 0, 0)
+#define COLOR_FILE_A		   RGB888_TO_RGB565(0x10,0xA0,0x10);
 
 #define OFFSET 35
 
@@ -428,6 +429,145 @@ int load_file(char **wildcards, char *result)
 	}
 	
 	clear_screen(COLOR_BACKGROUND);
+	return return_value;
+}
+
+static int cheats_menu()
+{
+	int i;
+	enum GUI_Action Action = GUI_ACTION_NONE;
+	u32 current_entry = 1, repeat = 1;
+	u32 MaxEntryDisplay = ((gsTexture.Height - (OFFSET - 15) * 2 - (5 + 10 + 40 + 10 + 15 + 50)) / 14);
+	u32 num_to_print;
+	u32 page, maxpage;
+	u16 color, ocolor;
+	int return_value = 1;
+
+	clear_screen(COLOR_BACKGROUND);
+	Action = GetGUIAction();
+	
+	while(repeat)
+	{
+		Action = GetGUIAction();
+			
+		switch(Action)
+		{
+			case GUI_ACTION_ENTER:
+				if(g_num_cheats > 0)
+				{
+					if (current_cheats_flag[current_entry - 1].cheat_active == 1)
+						current_cheats_flag[current_entry - 1].cheat_active = 0;
+					else
+						current_cheats_flag[current_entry - 1].cheat_active = 1;
+				}
+				break;
+				
+			case GUI_ACTION_LEAVE:
+				repeat = 0;
+				break;
+
+			case GUI_ACTION_DOWN:
+				if(g_num_cheats > 0)
+				{
+					if(current_entry < g_num_cheats)
+						current_entry++;
+				}
+				break;
+					
+			case GUI_ACTION_UP:
+				if(current_entry > 1)
+					current_entry--;
+				break;
+					
+			case GUI_ACTION_RIGHT:
+				if(g_num_cheats > 5 && current_entry < (g_num_cheats - 5))
+					current_entry += 5;
+				else
+					current_entry = g_num_cheats;
+				break;
+					
+			case GUI_ACTION_LEFT:
+				if(current_entry > 6)
+					current_entry -= 5;
+				else
+					current_entry = 1;
+				break;
+					
+			case GUI_ACTION_ALTERNATE:
+				repeat = 0;
+				break;
+				
+				default: 
+					break;
+		}
+		
+		clear_screen(COLOR_BACKGROUND);
+		DrawFrame(OFFSET - 15);
+		PrintStringOutline("Cheats", COLOR_TITLE_TEXT, COLOR_TITLE_OUTLINE, gsTexture.Mem, gsTexture.Width * 2, OFFSET, GetRenderedHeight(" ") * (0 + 2), gsTexture.Width, GetRenderedHeight(" ") + 2, CENTER, TOP);
+
+		if (g_num_cheats == 0) 
+		{
+			PrintStringOutline("Cheats file not found.", COLOR_ACTIVE_TEXT, COLOR_ACTIVE_OUTLINE, gsTexture.Mem, gsTexture.Width * 2, OFFSET + 5, GetRenderedHeight(" ") * (1 + 2), gsTexture.Width, GetRenderedHeight(" ") + 2, LEFT, TOP);
+			return_value = 0;
+		}
+		else
+		{
+			maxpage = g_num_cheats / MaxEntryDisplay + ((g_num_cheats % MaxEntryDisplay) > 0 ? 1 : 0);
+			page = 1;
+		
+			if(maxpage == 0)
+			{
+				num_to_print = g_num_cheats;
+			}
+			else
+			{
+				if(current_entry > MaxEntryDisplay)
+				{
+					try:
+					page++;
+					if(current_entry > MaxEntryDisplay * page)
+						goto try;
+				}
+			
+				if(page == maxpage && (g_num_cheats % MaxEntryDisplay) > 0)
+					num_to_print = g_num_cheats % MaxEntryDisplay;
+				else
+					num_to_print = MaxEntryDisplay;
+			}
+
+			for(i = 1; i < num_to_print + 1; i++)
+			{
+				if(i + (page - 1) * MaxEntryDisplay == current_entry)
+				{
+					if(current_cheats_flag[current_entry - 1].cheat_active == 1)
+					{
+						color = COLOR_FILE_A;
+						ocolor = COLOR_FILE_OUTLINE;
+					}
+					else
+					{
+						color = COLOR_ACTIVE_TEXT;
+						ocolor = COLOR_ACTIVE_OUTLINE;
+					}
+				}
+				else if(current_cheats_flag[i + (page - 1) * MaxEntryDisplay - 1].cheat_active == 1)
+				{
+					color = COLOR_FILE;
+					ocolor = COLOR_FILE_OUTLINE;
+				}
+				else
+				{
+					color = COLOR_INACTIVE_TEXT;
+					ocolor = COLOR_INACTIVE_OUTLINE;
+				}
+				
+				PrintStringOutline(current_cheats_flag[i + (page - 1) * MaxEntryDisplay - 1].cheat_name, color, ocolor, gsTexture.Mem, gsTexture.Width * 2, OFFSET, GetRenderedHeight(" ") * (i + 2) + OFFSET, gsTexture.Width, GetRenderedHeight(" ") + 2, LEFT, TOP);
+			}
+		}
+		
+		ReGBA_VideoFlip();
+	}
+	
 	return return_value;
 }
 
@@ -1118,20 +1258,73 @@ static void ActionLoadGame(struct Menu** ActiveMenu, uint32_t* ActiveMenuEntryIn
 	
 	if(load_file(file_ext, load_filename) != -1)
     {
-		init_cpu(ResolveSetting(BootFromBIOS, PerGameBootFromBIOS));
-	
        if(load_gamepak(load_filename) == -1)
        {
-       	    ShowErrorScreen("Failed to load gamepak %s, exiting.\n", load_filename);
+       	    ShowErrorScreen("Failed to load gamepak %s, back to menu.\n", load_filename);
         	ps2delay(10);
-        	quit();
+        	//quit();
        }
+       else
+       {
+			if (IsGameLoaded)
+			{
+				char FileNameNoExt[MAX_PATH + 1];
+				GetFileNameNoExtension(FileNameNoExt, CurrentGamePath);
+#ifdef CHEATS
+				add_cheats(FileNameNoExt);
+#endif
+				ReGBA_LoadSettings(FileNameNoExt, true);
+			}
+       	
+       	    init_cpu(ResolveSetting(BootFromBIOS, PerGameBootFromBIOS));
 	   
-       //reset_gba();
-       //reg[CHANGED_PC_STATUS] = 1;
-	   *ActiveMenu = NULL;
-	   main_ret = 0;
+	   		*ActiveMenu = NULL;
+	   		main_ret = 0;
+	   }
     }
+}
+
+uint32_t PerGameCheatsSettings = 0;
+
+static void ActionCheatsMenu(struct Menu** ActiveMenu, uint32_t* ActiveMenuEntryIndex)
+{
+	int ret, i;
+	
+	ret = cheats_menu();
+	
+	if(ret)
+	{
+		if (PerGameCheatsSettings)
+			PerGameCheatsSettings = 0;
+		else
+			PerGameCheatsSettings = 1;
+	}
+}
+
+void CheatsMenuLoadFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
+{
+	int i;
+	u32 CheatsSettings = atoi(Value);
+	
+	if (g_num_cheats > 0)
+	{
+		for(i = 0; i < 32; i++)
+			current_cheats_flag[i].cheat_active = CheatsSettings >> i & 1;
+	}
+}
+
+void CheatsMenuSaveFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
+{
+	int i;
+	u32 CheatsSettings = 0;
+	
+	if (g_num_cheats > 0)
+	{
+		for(i = 0; i < 32; i++)
+			CheatsSettings |= current_cheats_flag[i].cheat_active >> i & 1;
+	}
+	
+	snprintf(Value, 256, "%s = %d #cheats\n", ActiveMenuEntry->PersistentName, CheatsSettings);
 }
 
 static void NullLeftFunction(struct Menu* ActiveMenu, struct MenuEntry* ActiveMenuEntry)
@@ -2039,6 +2232,13 @@ static struct MenuEntry MainMenu_SavedStates = {
 	ENTRY_SUBMENU("Saved states...", &SavedStateMenu)
 };
 
+static struct MenuEntry PerGameMainMenu_Cheats = {
+	.Kind = KIND_OPTION, .Name = "Cheats...", .PersistentName = "cheat",
+	.Target = &PerGameCheatsSettings, .ChoiceCount = 2, .Choices = {{ "", "" },{ "", "" }},
+	.LoadFunction = &CheatsMenuLoadFunction, .SaveFunction = &CheatsMenuSaveFunction,
+	.ButtonEnterFunction = &ActionCheatsMenu
+};
+
 static struct MenuEntry MainMenu_Debug = {
 	ENTRY_SUBMENU("Performance and debugging...", &DebugMenu)
 };
@@ -2067,7 +2267,7 @@ static struct Menu PerGameMainMenu = {
 	.Parent = NULL, .Title = "ReGBA Main Menu",
 	MENU_PER_GAME,
 	.AlternateVersion = &MainMenu,
-	.Entries = { &PerGameMainMenu_Display, &PerGameMainMenu_Input, &PerGameMainMenu_Hotkey, &Strut, &Strut, &Strut, &Strut, &Strut, &MainMenu_LoadGame, &MainMenu_Reset, &MainMenu_Return, &MainMenu_Exit, NULL }
+	.Entries = { &PerGameMainMenu_Display, &PerGameMainMenu_Input, &PerGameMainMenu_Hotkey, &Strut, &PerGameMainMenu_Cheats, &Strut, &Strut, &Strut, &MainMenu_LoadGame, &MainMenu_Reset, &MainMenu_Return, &MainMenu_Exit, NULL }
 };
 
 struct Menu MainMenu = {

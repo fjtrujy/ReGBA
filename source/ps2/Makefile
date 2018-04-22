@@ -1,7 +1,7 @@
 
 EE_BIN = ReGBA.elf
 
-EE_CFLAGS += -g -DsHOST -DMIPS_XBURST -DLOAD_ALL_ROM 
+EE_CFLAGS += -g -DwHOST -DMIPS_XBURST -DLOAD_ALL_ROM -DCHEATS
 EE_INCS += -I./ -I$(PS2SDK)/ports/include -I$(PS2DEV)/gskit/include -I../ -I../mips
 EE_LDFLAGS += -L$(PS2SDK)/ports/lib -L$(PS2DEV)/gskit/lib
 EE_LIBS += -lgskit -ldmakit -laudsrv -lpad -lz -lps2time -lcdvd \
@@ -13,7 +13,7 @@ COMMON_OBJS = ../bios.o ../cpu_asm.o ../cpu_common.o ../input.o ../memory.o ../s
 			  ../stats.o ../unifont.o ../video.o ../zip.o ../mips/stub.o
 		   
 EE_OBJS = $(COMMON_OBJS) draw.o main.o ps2input.o ps2memory.o \
-		ps2sound.o port.o port-asm.o ps2.o gui.o settings.o \
+		ps2sound.o port.o port-asm.o ps2.o gui.o settings.o cheats.o charsets.o \
 		scalers/2xSaI.o scalers/scale2x.o scalers/scale3x.o scalers/scaler.o \
 		iomanX_irx.o usbhdfsd_irx.o usbd_irx.o freesd_irx.o audsrv_irx.o \
 		poweroff_irx.o fileXio_irx.o ps2atad_irx.o ps2fs_irx.o ps2hdd_irx.o ps2dev9_irx.o \
