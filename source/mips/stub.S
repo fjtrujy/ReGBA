@@ -1222,11 +1222,11 @@ mips_indirect_branch_dual:
 # See smc_write for its register assignment.
 .macro post_write_metadata_core base, metabase, gba_addr_line
   la $1, \base                    # load the Data Area's starting address
-  sub $4, $2, $1                  # regenerate the offset after base -> $4
+  subu $4, $2, $1                 # regenerate the offset after base -> $4
   srl $2, $4, 2                   # $2 = (address & ~3) [>> 2]
   sll $2, $2, 3                   # byte offset into a 16-bit array: * 2
   la $1, \metabase                # load the Metadata Area's address
-  add $1, $1, $2                  # $1 = &metabase[offset] (u16)
+  addu $1, $1, $2                 # $1 = &metabase[offset] (u16)
 
   lhu $5, 6($1)                   # load the code modification status
 #ifndef MIPS_XBURST
@@ -1355,6 +1355,9 @@ execute_load_backup_u8:
 execute_load_open_u8:
   open_load8 patch_load_u8
 
+.data
+.align 2
+
 load_u8_ftable:
   .long execute_load_bios_u8      # 0x00 BIOS
   .long execute_load_open_u8      # 0x01 open address
@@ -1372,6 +1375,8 @@ load_u8_ftable:
   .long execute_load_eeprom_u8    # 0x0D gamepak/eeprom
   .long execute_load_backup_u8    # 0x0E Flash ROM/SRAM
   .long execute_load_open_u8      # 0x0F open address
+
+.text
 
 patch_load_u8:
   patch_handler load_u8_ftable, 0x01
@@ -1462,6 +1467,9 @@ execute_load_backup_s8:
 execute_load_open_s8:
   open_load8 patch_load_s8
 
+.data
+.align 2
+
 load_s8_ftable:
   .long execute_load_bios_s8      # 0x00 BIOS
   .long execute_load_open_s8      # 0x01 open address
@@ -1479,6 +1487,8 @@ load_s8_ftable:
   .long execute_load_eeprom_s8    # 0x0D gamepak/eeprom
   .long execute_load_backup_s8    # 0x0E Flash ROM/SRAM
   .long execute_load_open_s8      # 0x0F open address
+
+.text
 
 patch_load_s8:
   patch_handler load_s8_ftable, 1
@@ -1653,6 +1663,9 @@ execute_load_backup_u16u:
 execute_load_open_u16u:
   open_load16_align16 1, 1, patch_load_u16
 
+.data
+.align 2
+
 load_u16_ftable:
 #  .long execute_load_full_u16
   .long execute_load_bios_u16     # 0x00 BIOS
@@ -1723,7 +1736,7 @@ load_u16_ftable:
   .long execute_load_full_u16
   .long execute_load_full_u16
 
-
+.text
 
 patch_load_u16:
   patch_handler_align load_u16_ftable, 1
@@ -1895,6 +1908,9 @@ execute_load_backup_s16u:
 execute_load_open_s16u:
   open_load16_align 1, 1, patch_load_s16
 
+.data
+.align 2
+
 load_s16_ftable:
   .long execute_load_bios_s16     # 0x00 BIOS
   .long execute_load_open_s16     # 0x01 open address
@@ -1929,6 +1945,8 @@ load_s16_ftable:
   .long execute_load_eeprom_s16u  # 0x0D gamepak/eeprom unaligned
   .long execute_load_backup_s16u  # 0x0E Flash ROM/SRAM unaligned
   .long execute_load_open_s16u    # 0x0F open unaligned
+
+.text
 
 patch_load_s16:
   patch_handler_align load_s16_ftable, 1
@@ -2236,6 +2254,8 @@ execute_load_backup_u32u3:
 execute_load_open_u32u3:
   open_load32_align32 2, 3, patch_load_u32
 
+.data
+.align 2
 
 load_u32_ftable:
   .long execute_load_bios_u32     # 0x00 BIOS
@@ -2306,10 +2326,10 @@ load_u32_ftable:
   .long execute_load_backup_u32u3   # 0x0E Flash ROM/SRAM unaligned (3b)
   .long execute_load_open_u32u3     # 0x0F open unaligned (3b)
 
+.text
+
 patch_load_u32:
   patch_handler_align load_u32_ftable, 2
-
-
 
 # Unsigned always aligned 32bit load handlers
 
@@ -2386,6 +2406,9 @@ execute_load_backup_u32a:
 execute_load_open_u32a:
   open_load32_a patch_load_u32a
 
+.data
+.align 2
+
 load_u32a_ftable:
   .long execute_load_bios_u32a      # 0x00 BIOS unaligned (3b)
   .long execute_load_open_u32a      # 0x01 open address unaligned (3b)
@@ -2403,6 +2426,8 @@ load_u32a_ftable:
   .long execute_load_eeprom_u32a    # 0x0D gamepak/eeprom unaligned (3b)
   .long execute_load_backup_u32a    # 0x0E Flash ROM/SRAM unaligned (3b)
   .long execute_load_open_u32a      # 0x0F open unaligned (3b)
+
+.text
 
 patch_load_u32a:
   patch_handler load_u32a_ftable, 1
@@ -2489,6 +2514,9 @@ execute_store_backup_u8:
 execute_store_ignoreF_u8:
   ignore_high patch_store_u8
 
+.data
+.align 2
+
 store_u8_ftable:
   .long execute_store_ignore0_u8  # 0x00 BIOS
   .long execute_store_ignore1_u8  # 0x01 open address
@@ -2506,6 +2534,8 @@ store_u8_ftable:
   .long execute_store_eeprom_u8   # 0x0D gamepak/eeprom
   .long execute_store_backup_u8   # 0x0E Flash ROM/SRAM
   .long execute_store_ignoreF_u8  # 0x0F open address
+
+.text
 
 patch_store_u8:
   patch_handler store_u8_ftable, 0x0F
@@ -2584,6 +2614,9 @@ execute_store_ignoreE_u16:
 execute_store_ignoreF_u16:
   ignore_high patch_store_u16
 
+.data
+.align 2
+
 store_u16_ftable:
   .long execute_store_ignore0_u16 # 0x00 BIOS
   .long execute_store_ignore1_u16 # 0x01 open address
@@ -2602,6 +2635,7 @@ store_u16_ftable:
   .long execute_store_ignoreE_u16 # 0x0E Flash ROM/SRAM
   .long execute_store_ignoreF_u16 # 0x0F open address
 
+.text
 
 patch_store_u16:
   patch_handler store_u16_ftable, 0x0F
@@ -2682,6 +2716,9 @@ execute_store_ignoreE_u32:
 execute_store_ignoreF_u32:
   ignore_high patch_store_u32
 
+.data
+.align 2
+
 store_u32_ftable:
   .long execute_store_ignore0_u32 # 0x00 BIOS
   .long execute_store_ignore1_u32 # 0x01 open address
@@ -2700,6 +2737,7 @@ store_u32_ftable:
   .long execute_store_ignoreE_u32 # 0x0E Flash ROM/SRAM
   .long execute_store_ignoreF_u32 # 0x0F open address
 
+.text
 
 patch_store_u32:
   patch_handler store_u32_ftable, 0x0F
@@ -2789,6 +2827,9 @@ execute_store_ignoreE_u32a:
 execute_store_ignoreF_u32a:
   ignore_high patch_store_u32a
 
+.data
+.align 2
+
 store_u32a_ftable:
   .long execute_store_ignore0_u32a # 0x00 BIOS
   .long execute_store_ignore1_u32a # 0x01 open address
@@ -2806,6 +2847,8 @@ store_u32a_ftable:
   .long execute_store_eeprom_u32a  # 0x0D gamepak/eeprom
   .long execute_store_ignoreE_u32a # 0x0E Flash ROM/SRAM
   .long execute_store_ignoreF_u32a # 0x0F open address
+
+.text
 
 patch_store_u32a:
   patch_handler store_u32a_ftable, 0x0F
@@ -3177,6 +3220,9 @@ ext_store_backup:
   jr $ra                          # we can return
   addiu $sp, $sp, 4 * _SA         # fix the stack (delay)
 
+.data
+.align 2
+
 ext_store_u8_jtable:
   .long ext_store_ignore    # 0x00 BIOS
   .long ext_store_ignore    # 0x01 invalid
@@ -3194,6 +3240,8 @@ ext_store_u8_jtable:
   .long ext_store_eeprom    # 0x0D EEPROM (possibly)
   .long ext_store_backup    # 0x0E Flash ROM/SRAM
   .long ext_store_ignore    # 0x0F invalid
+
+.text
 
 
 
@@ -3277,6 +3325,9 @@ ext_store_rtc:
   jr $ra                          # we can return
   addiu $sp, $sp, 4 * _SA         # fix the stack (delay)
 
+.data
+.align 2
+
 ext_store_u16_jtable:
   .long ext_store_ignore          # 0x00 BIOS, ignore
   .long ext_store_ignore          # 0x01 invalid, ignore
@@ -3293,6 +3344,8 @@ ext_store_u16_jtable:
   .long ext_store_ignore          # 0x0C gamepak, ignore
   .long ext_store_eeprom          # 0x0D EEPROM (possibly)
   .long ext_store_ignore          # 0x0E Flash ROM/SRAM
+
+.text
 
 ext_store_u16:
   srl $1, $4, 24                  # $1 = address >> 24
@@ -3362,6 +3415,9 @@ ext_store_oam32:
   jr $ra                          # return
   sw $5, %lo(oam_ram)($1)         # oam_ram[address] = value (delay)
 
+.data
+.align 2
+
 ext_store_u32_jtable:
   .long ext_store_ignore          # 0x00 BIOS, ignore
   .long ext_store_ignore          # 0x01 invalid, ignore
@@ -3378,6 +3434,8 @@ ext_store_u32_jtable:
   .long ext_store_ignore          # 0x0C gamepak, ignore
   .long ext_store_eeprom          # 0x0D EEPROM (possibly)
   .long ext_store_ignore          # 0x0E Flash ROM/SRAM
+
+.text
 
 ext_store_u32:
   srl $1, $4, 24                  # $1 = address >> 24
@@ -3429,6 +3487,9 @@ ext_store_palette32a:
   lw $ra, REG_SAVE($16)           # restore return address
 #endif
 
+.data
+.align 2
+
 ext_store_u32a_jtable:
   .long ext_store_ignore          # 0x00 BIOS, ignore
   .long ext_store_ignore          # 0x01 invalid, ignore
@@ -3445,6 +3506,8 @@ ext_store_u32a_jtable:
   .long ext_store_ignore          # 0x0C gamepak, ignore
   .long ext_store_ignore          # 0x0D EEPROM (nothing will write this)
   .long ext_store_ignore          # 0x0E Flash ROM/SRAM
+
+.text
 
 ext_aligned_store32:
   srl $1, $4, 24                  # $1 = address >> 24
@@ -3664,11 +3727,11 @@ lsl_shift_high:
   bne $1, $0, lsl_shift_done      # jump if shift == 32
   andi $22, $4, 1                 # c flag = value & 0x01 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsl_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what (delay)
+  addu $4, $0, $0                 # value = 0 no matter what (delay)
 
 
 execute_lsr_flags_reg:
@@ -3689,11 +3752,11 @@ lsr_shift_high:
   bne $1, $0, lsr_shift_done      # jump if shift == 32
   srl $22, $4, 31                 # c flag = value >> 31 (delay)
 
-  add $22, $0, $0                 # c flag = 0 otherwise
+  addu $22, $0, $0                # c flag = 0 otherwise
 
 lsr_shift_done:
   jr $ra                          # return
-  add $4, $0, $0                  # value = 0 no matter what
+  addu $4, $0, $0                 # value = 0 no matter what
 
 
 execute_asr_flags_reg:
@@ -3723,14 +3786,17 @@ execute_ror_flags_reg:
   andi $22, $1, 1                 # c flag = $1 & 1
 
 ror_zero_shift:
-# TODO [Neb] Optimise with ROTRV instruction
+#ifdef MIPS_32R2
+  jr $ra                          # return
+  rotrv $4, $4, $5                # return (value ror shift) delay
+#else
   subu $1, $0, $5
   addiu $1, $1, 32
   sllv $1, $4, $1
   srlv $4, $4, $5
   jr $ra                          # return
-#  rotrv $4, $4, $5                # return (value ror shift) delay
   or   $4, $4, $1                 # emulate ROTRV instruction
+#endif
 
 # エミュレートの開始
 # 入力 $4: cycle counter
@@ -3787,6 +3853,7 @@ call_bios_hle:
   addiu $sp, $sp, 4 * _SA         # branch delay
 
 .bss
+.align 2
 
 memory_map_read:
   .space 0x8000

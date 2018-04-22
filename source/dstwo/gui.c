@@ -26,6 +26,7 @@
 /******************************************************************************
  * 头文件
  ******************************************************************************/
+#include <ds2/ioext.h>
 #include <ds2/pm.h>
 
 #include "common.h"
@@ -399,13 +400,14 @@ int32_t load_file(const char **exts, char *result_name, char *dir)
 		show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 		PRINT_STRING_BG(DS2_GetSubScreen(), msg[MSG_FILE_MENU_LOADING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
 		DS2_UpdateScreen(DS_ENGINE_SUB);
-		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 
 		clock_t last_display = clock();
 
 		struct selector_entry* entries;
+		char* names;
 		DIR* cur_dir_handle = NULL;
 		size_t count = 1, capacity = 4 /* initially */;
+		size_t name_count = 3, name_capacity = 256 /* initially */;
 
 		entries = malloc(capacity * sizeof(struct selector_entry));
 		if (entries == NULL) {
@@ -414,12 +416,15 @@ int32_t load_file(const char **exts, char *result_name, char *dir)
 			goto cleanup;
 		}
 
-		entries[0].name = strdup("..");
-		if (entries[0].name == NULL) {
-			ret = -1;
-			continue_dir = 0;
+		names = malloc(name_capacity);
+		if (names == NULL) {
+			ret = -2;
+			continue_dir = false;
 			goto cleanup;
 		}
+
+		memcpy(names, "..", 3);
+		entries[0].name = (char*) 0;
 		entries[0].is_dir = true;
 
 		cur_dir_handle = opendir(cur_dir);
@@ -432,28 +437,32 @@ int32_t load_file(const char **exts, char *result_name, char *dir)
 		struct dirent* cur_entry_handle;
 		struct stat    st;
 
+#ifdef SCDS2
+		while ((cur_entry_handle = readdir_stat(cur_dir_handle, &st)) != NULL)
+#else
 		while ((cur_entry_handle = readdir(cur_dir_handle)) != NULL)
+#endif
 		{
 			clock_t now = clock();
 			bool add = false;
 			char* name = cur_entry_handle->d_name;
+#ifndef SCDS2
 			char path[PATH_MAX];
 
 			snprintf(path, PATH_MAX, "%s/%s", cur_dir, name);
 			stat(path, &st);
+#endif
 
-			if (now >= last_display + CLOCKS_PER_SEC / 4) {
+			if (now >= last_display + CLOCKS_PER_SEC / 20) {
 				last_display = now;
 
+				DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 				show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
 				show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
-				char line[384], element[16];
-				strcpy(line, msg[MSG_FILE_MENU_LOADING_LIST]);
-				sprintf(element, " (%" PRIu32 ")", count);
-				strcat(line, element);
+				char line[384];
+				sprintf(line, "%s (%" PRIu32 ")", msg[MSG_FILE_MENU_LOADING_LIST], count);
 				PRINT_STRING_BG(DS2_GetSubScreen(), line, COLOR_WHITE, COLOR_TRANS, 49, 10);
-				DS2_UpdateScreenPart(DS_ENGINE_SUB, 0, ICON_TITLEICON.y);
-				DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
+				DS2_UpdateScreenPart(DS_ENGINE_SUB, 10, 10 + BDF_GetFontHeight());
 			}
 
 			if (S_ISDIR(st.st_mode)) {
@@ -494,28 +503,51 @@ int32_t load_file(const char **exts, char *result_name, char *dir)
 					}
 				}
 
-				// Then add the entry.
-				entries[count].name = strdup(name);
-				if (entries[count].name == NULL) {
-					ret = -2;
-					continue_dir = 0;
-					goto cleanup;
+				// Ensure we have enough capacity in the names array.
+				size_t name_len = strlen(name);
+				if (name_count + name_len + 1 > name_capacity) {
+					size_t new_capacity = name_capacity * 2;
+					if (name_count + name_len + 1 > new_capacity) {
+						new_capacity = name_count + name_len + 1;
+					}
+					char* new_names = realloc(names, new_capacity);
+					if (new_names == NULL) {
+						ret = -2;
+						continue_dir = false;
+						goto cleanup;
+					} else {
+						names = new_names;
+						name_capacity = new_capacity;
+					}
 				}
 
+				// Then add the entry.
+				memcpy(names + name_count, name, name_len + 1);
+
+				entries[count].name = (char*) name_count;
 				entries[count].is_dir = S_ISDIR(st.st_mode) ? true : false;
 
 				count++;
+				name_count += name_len + 1;
 			}
 		}
 
+		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 		show_icon(DS2_GetSubScreen(), &ICON_TITLE, 0, 0);
 		show_icon(DS2_GetSubScreen(), &ICON_TITLEICON, TITLE_ICON_X, TITLE_ICON_Y);
 		PRINT_STRING_BG(DS2_GetSubScreen(), msg[MSG_FILE_MENU_SORTING_LIST], COLOR_WHITE, COLOR_TRANS, 49, 10);
-		DS2_UpdateScreenPart(DS_ENGINE_SUB, 0, ICON_TITLEICON.y);
-		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
+		DS2_UpdateScreenPart(DS_ENGINE_SUB, 10, 10 + BDF_GetFontHeight());
+
+		/* Fix up pointers to names, which have thus far been written as
+		 * offsets to our 'names' pointer, to allow us to use realloc on
+		 * 'names'. */
+		for (i = 0; i < count; i++) {
+			entries[i].name += (uintptr_t) names;
+		}
 
 		/* skip the first entry when sorting, which is always ".." */
 		qsort(&entries[1], count - 1, sizeof(struct selector_entry), name_sort);
+		DS2_AwaitScreenUpdate(DS_ENGINE_SUB);
 		LowFrequencyCPU();
 
 		bool continue_input = true;
@@ -763,11 +795,8 @@ cleanup:
 		if (cur_dir_handle != NULL)
 			closedir(cur_dir_handle);
 
-		if (entries != NULL) {
-			for (; count > 0; count--)
-				free(entries[count - 1].name);
-			free(entries);
-		}
+		free(entries);
+		free(names);
 	} // end while
 
 	return ret;
