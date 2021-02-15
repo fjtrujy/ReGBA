@@ -159,6 +159,8 @@ uint32_t prescale_table[] = { 0, 6, 8, 10 };
 
 bool IsNintendoBIOS = false;
 
+struct BIOS_DATA bios;
+
 // GBA memory areas.
 
 // Palette RAM             (05000000h)      1 KiB

@@ -30,27 +30,25 @@ typedef enum
   no_frameskip
 } frameskip_type;
 
-extern u32 cpu_ticks_;
-extern u32 frame_ticks;
-extern u32 execute_cycles;
+extern uint32_t cpu_ticks_;
+extern uint32_t frame_ticks;
+extern uint32_t execute_cycles;
 extern frameskip_type current_frameskip_type;
-extern u32 frameskip_value;
-extern u32 random_skip;
-extern u32 global_cycles_per_instruction;
-extern u32 synchronize_flag;
-extern u32 skip_next_frame;
+extern uint32_t frameskip_value;
+extern uint32_t random_skip;
+extern uint32_t global_cycles_per_instruction;
+extern uint32_t synchronize_flag;
+extern uint32_t skip_next_frame;
 
-extern u64 base_timestamp;
+extern uint64_t base_timestamp;
 
-extern u32 clock_speed;
+extern uint32_t clock_speed;
 
-u32 update_gba();
+uint32_t update_gba();
 void reset_gba();
 void synchronize();
 void quit();
 void error_quit();
-void delay_us(u32 us_count);
-void get_ticks_us(u64 *tick_return);
 void change_ext(const char *src, char *buffer, char *extension);
 void main_write_mem_savestate();
 void main_read_mem_savestate();
@@ -59,7 +57,7 @@ void main_read_mem_savestate();
   timer[timer_number].reload = 0x10000 - value;                               \
   if(timer_number < 2)                                                        \
   {                                                                           \
-    u32 timer_reload =                                                        \
+    uint32_t timer_reload =                                                   \
      timer[timer_number].reload << timer[timer_number].prescale;              \
     sound_update_frequency_step(timer_number);                                \
   }                                                                           \

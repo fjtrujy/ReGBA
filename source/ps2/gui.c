@@ -105,19 +105,19 @@ static void DrawFrame(int offset)
 	draw_rect(gsTexture.Width - offset, offset, 1, gsTexture.Height - offset * 2, FRAME_COLOR);
 }
 
-static void PrintEntries(char **dirs, char **files, u32 num_files, u32 num_dirs, u32 selected)
+static void PrintEntries(char **dirs, char **files, uint32_t num_files, uint32_t num_dirs, uint32_t selected)
 {
-	u32 num_to_print;
-	u32 page, maxpage;
+	uint32_t num_to_print;
+	uint32_t page, maxpage;
 	int i;
 	
-	u32 num_of_entries = num_files + num_dirs;
-	u16 color, ocolor;
+	uint32_t num_of_entries = num_files + num_dirs;
+	int16_t color, ocolor;
 		
 	if(files == NULL || dirs == NULL || num_of_entries == 0)
 	return;
 	
-	u32 MaxEntryDisplay = ((gsTexture.Height - (OFFSET - 15) * 2 - (5 + 10 + 40 + 10 + 15 + 50)) / 14);
+	uint32_t MaxEntryDisplay = ((gsTexture.Height - (OFFSET - 15) * 2 - (5 + 10 + 40 + 10 + 15 + 50)) / 14);
 	
 	maxpage = num_of_entries / MaxEntryDisplay + ((num_of_entries % MaxEntryDisplay) > 0 ? 1 : 0);
 		
@@ -202,23 +202,23 @@ static int sort_function(const void *dest_str_ptr, const void *src_str_ptr)
 int load_file(char **wildcards, char *result)
 {
 	int i;
-	PS2DIR *current_dir;
-	struct ps2dirent *current_file;
+	DIR *current_dir;
+	struct dirent *current_file;
 	int return_value = 1;
 	char current_dir_name[MAX_PATH];
 	char current_dir_short[81];
-	u32 current_dir_length;
-	u32 total_filenames_allocated;
-	u32 total_dirnames_allocated;
+	uint32_t current_dir_length;
+	uint32_t total_filenames_allocated;
+	uint32_t total_dirnames_allocated;
 	char **file_list;
 	char **dir_list;
-	u32 num_files;
-	u32 num_dirs;
-	u32 current_entry;
+	uint32_t num_files;
+	uint32_t num_dirs;
+	uint32_t current_entry;
 	char *file_name;
-	u32 file_name_length;
-	s32 ext_pos = -1;
-	u32 repeat;
+	uint32_t file_name_length;
+	int32_t ext_pos = -1;
+	uint32_t repeat;
 	enum GUI_Action Action = GUI_ACTION_NONE;
 	char *p;
 	
@@ -235,13 +235,13 @@ int load_file(char **wildcards, char *result)
 		num_files = 0;
 		num_dirs = 0;
 	
-		ps2Getcwd(current_dir_name, MAX_PATH);
-		current_dir = ps2Opendir(current_dir_name);
+		getcwd(current_dir_name, MAX_PATH);
+		current_dir = opendir(current_dir_name);
 		
 		do
 		{
 			if(current_dir)
-			current_file = ps2Readdir(current_dir);
+			current_file = readdir(current_dir);
 			else
 			current_file = NULL;
 			
@@ -252,13 +252,13 @@ int load_file(char **wildcards, char *result)
 				
 				if((file_name[0] != '.') || (file_name[1] == '.'))
 				{
-					if(current_dir->d_entry->d_type == DT_DIR)
-					{
-						dir_list[num_dirs] = (char *)malloc(file_name_length + 1);
-						sprintf(dir_list[num_dirs], "%s", file_name);
-						num_dirs++;
-					}
-					else
+					// if(current_dir->entry->d_type == DT_DIR)
+					// {
+					// 	dir_list[num_dirs] = (char *)malloc(file_name_length + 1);
+					// 	sprintf(dir_list[num_dirs], "%s", file_name);
+					// 	num_dirs++;
+					// }
+					// else
 					{
 						// Must match one of the wildcards, also ignore the .
 						if(file_name_length >= 4)
@@ -306,7 +306,7 @@ int load_file(char **wildcards, char *result)
 		qsort((void *)file_list, num_files, sizeof(u8 *), sort_function);
 		qsort((void *)dir_list, num_dirs, sizeof(u8 *), sort_function);
 		
-		ps2Closedir(current_dir);
+		closedir(current_dir);
 
 		current_dir_length = strlen(current_dir_name);
 
@@ -436,11 +436,11 @@ static int cheats_menu()
 {
 	int i;
 	enum GUI_Action Action = GUI_ACTION_NONE;
-	u32 current_entry = 1, repeat = 1;
-	u32 MaxEntryDisplay = ((gsTexture.Height - (OFFSET - 15) * 2 - (5 + 10 + 40 + 10 + 15 + 50)) / 14);
-	u32 num_to_print;
-	u32 page, maxpage;
-	u16 color, ocolor;
+	uint32_t current_entry = 1, repeat = 1;
+	uint32_t MaxEntryDisplay = ((gsTexture.Height - (OFFSET - 15) * 2 - (5 + 10 + 40 + 10 + 15 + 50)) / 14);
+	uint32_t num_to_print;
+	uint32_t page, maxpage;
+	int16_t color, ocolor;
 	int return_value = 1;
 
 	clear_screen(COLOR_BACKGROUND);
@@ -1071,7 +1071,7 @@ static void SavedStateSelectionDisplayValue(struct MenuEntry* DrawnMenuEntry, st
 
 static void SavedStateUpdatePreview(struct Menu* ActiveMenu)
 {
-	memset(ActiveMenu->UserData, 0, GBA_SCREEN_WIDTH * GBA_SCREEN_HEIGHT * sizeof(u16));
+	memset(ActiveMenu->UserData, 0, GBA_SCREEN_WIDTH * GBA_SCREEN_HEIGHT * sizeof(int16_t));
 	char SavedStateFilename[MAX_PATH + 1];
 	if (!ReGBA_GetSavedStateFilename(SavedStateFilename, CurrentGamePath, SelectedState))
 	{
@@ -1086,7 +1086,7 @@ static void SavedStateUpdatePreview(struct Menu* ActiveMenu)
 
 	FILE_SEEK(fp, SVS_HEADER_SIZE + sizeof(struct ReGBA_RTC), SEEK_SET);
 
-	FILE_READ(fp, ActiveMenu->UserData, GBA_SCREEN_WIDTH * GBA_SCREEN_HEIGHT * sizeof(u16));
+	FILE_READ(fp, ActiveMenu->UserData, GBA_SCREEN_WIDTH * GBA_SCREEN_HEIGHT * sizeof(int16_t));
 
 	FILE_CLOSE(fp);
 }
@@ -1304,7 +1304,7 @@ static void ActionCheatsMenu(struct Menu** ActiveMenu, uint32_t* ActiveMenuEntry
 void CheatsMenuLoadFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
 {
 	int i;
-	u32 CheatsSettings = atoi(Value);
+	uint32_t CheatsSettings = atoi(Value);
 	
 	if (g_num_cheats > 0)
 	{
@@ -1316,7 +1316,7 @@ void CheatsMenuLoadFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
 void CheatsMenuSaveFunction(struct MenuEntry* ActiveMenuEntry, char* Value)
 {
 	int i;
-	u32 CheatsSettings = 0;
+	uint32_t CheatsSettings = 0;
 	
 	if (g_num_cheats > 0)
 	{
@@ -2283,7 +2283,7 @@ static struct Menu ErrorScreen = {
 	.Entries = { NULL }
 };
 
-u32 ReGBA_Menu(enum ReGBA_MenuEntryReason EntryReason)
+uint32_t ReGBA_Menu(enum ReGBA_MenuEntryReason EntryReason)
 {
 	pause_audio();
 	MainMenu.UserData = copy_screen();
@@ -2485,7 +2485,7 @@ u32 ReGBA_Menu(enum ReGBA_MenuEntryReason EntryReason)
 
 	StatsStopFPS();
 	timespec Now;
-	clock_gettime(&Now);
+	time(&Now);
 	
 	Stats.LastFPSCalculationTime = Now;
 	if (MainMenu.UserData != NULL)

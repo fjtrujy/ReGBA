@@ -27,28 +27,30 @@ uint32_t ShowFPS;
 uint32_t PerGameUserFrameskip;
 uint32_t UserFrameskip;
 
+int errno;
+
 void ReGBA_Trace(const char* Format, ...)
 {
-	char* line = malloc(82);
-	va_list args;
-	int linelen;
+	// char* line = malloc(82);
+	// va_list args;
+	// int linelen;
 
-	va_start(args, Format);
-	if ((linelen = vsnprintf(line, 82, Format, args)) >= 82)
-	{
-		va_end(args);
-		va_start(args, Format);
-		free(line);
-		line = malloc(linelen + 1);
-		vsnprintf(line, linelen + 1, Format, args);
-	}
-	printf(line);
-	va_end(args);
-	free(line);
-	printf("\r\n");
+	// va_start(args, Format);
+	// if ((linelen = vsnprintf(line, 82, Format, args)) >= 82)
+	// {
+	// 	va_end(args);
+	// 	va_start(args, Format);
+	// 	free(line);
+	// 	line = malloc(linelen + 1);
+	// 	vsnprintf(line, linelen + 1, Format, args);
+	// }
+	// printf(line);
+	// va_end(args);
+	// free(line);
+	// printf("\r\n");
 }
 
-void ReGBA_BadJump(u32 SourcePC, u32 TargetPC)
+void ReGBA_BadJump(uint32_t SourcePC, uint32_t TargetPC)
 {
 	//printf("GBA segmentation fault");
 	//printf("The game tried to jump from %08X to %08X", SourcePC, TargetPC);
@@ -60,13 +62,13 @@ void ReGBA_BadJump(u32 SourcePC, u32 TargetPC)
 	error_quit();
 }
 
-void ReGBA_MaxBlockExitsReached(u32 BlockStartPC, u32 BlockEndPC, u32 Exits)
+void ReGBA_MaxBlockExitsReached(uint32_t BlockStartPC, uint32_t BlockEndPC, uint32_t Exits)
 {
 	ReGBA_Trace("Native code exit limit reached");
 	ReGBA_Trace("%u exits in the block of GBA code from %08X to %08X", Exits, BlockStartPC, BlockEndPC);
 }
 
-void ReGBA_MaxBlockSizeReached(u32 BlockStartPC, u32 BlockEndPC, u32 BlockSize)
+void ReGBA_MaxBlockSizeReached(uint32_t BlockStartPC, uint32_t BlockEndPC, uint32_t BlockSize)
 {
 	ReGBA_Trace("Native code block size reached");
 	ReGBA_Trace("%u instructions in the block of GBA code from %08X to %08X", BlockSize, BlockStartPC, BlockEndPC);
@@ -89,7 +91,7 @@ timespec TimeDifference(timespec Past, timespec Present)
 extern int vblank_count;
 void ReGBA_DisplayFPS(void)
 {
-	u32 Visible = ResolveSetting(ShowFPS, PerGameShowFPS);
+	uint32_t Visible = ResolveSetting(ShowFPS, PerGameShowFPS);
 	/*if (Visible)
 	{
 		timespec Now;
@@ -127,8 +129,8 @@ void ReGBA_DisplayFPS(void)
 
 void ReGBA_LoadRTCTime(struct ReGBA_RTC* RTCData)
 {
-	time_t GMTTime = ps2time_time(NULL);
-	struct tm* Time = ps2time_localtime(&GMTTime);
+	time_t GMTTime = time(NULL);
+	struct tm* Time = localtime(&GMTTime);
 
 	RTCData->year = Time->tm_year;
 	RTCData->month = Time->tm_mon + 1;

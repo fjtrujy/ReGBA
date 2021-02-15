@@ -44,6 +44,12 @@ typedef uint32_t FIXED16_16;  // Q16.16 fixed-point
 #include <string.h>
 #include <math.h>
 
+#include <kernel.h>
+#include <gsKit.h>
+#include <gsInline.h>
+#include <time.h>
+#include <ps2sdkapi.h>
+
 #ifdef __GNUC__
 #	define likely(x)       __builtin_expect((x),1)
 #	define unlikely(x)     __builtin_expect((x),0)

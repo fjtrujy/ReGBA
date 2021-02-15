@@ -880,7 +880,7 @@ void ReGBA_ProgressInitialise(enum ReGBA_FileAction Action)
 
 	if (Action == FILE_ACTION_SAVE_BATTERY)
 		return; // Ignore this completely, because it flashes in-game
-	clock_gettime(&LastProgressUpdate);
+	time(&LastProgressUpdate);
 	CurrentFileAction = Action;
 	InFileAction = true;
 
@@ -890,7 +890,7 @@ void ReGBA_ProgressInitialise(enum ReGBA_FileAction Action)
 void ReGBA_ProgressUpdate(uint32_t Current, uint32_t Total)
 {
 	struct timespec Now, Difference;
-	clock_gettime(&Now);
+	time(&Now);
 	Difference = TimeDifference(LastProgressUpdate, Now);
 	if (InFileAction &&
 	    (Difference.tv_sec > 0 || Difference.tv_nsec > 50000000 || Current == Total)

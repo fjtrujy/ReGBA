@@ -11,7 +11,7 @@
 #include <sifrpc.h>
 #include <sys/fcntl.h>
 
-#define DPRINTF(x...) sio_printf(x)
+#define DPRINTF(x...) printf(x)
 //#define DPRINTF(x...)
 //#define DEBUG
 
@@ -50,17 +50,17 @@ extern int size_ps2dev9_irx;
 extern u8 poweroff_irx[];
 extern int size_poweroff_irx;
 
-extern u8 smscdvd_irx[];
-extern int size_smscdvd_irx;
+// extern u8 smscdvd_irx[];
+// extern int size_smscdvd_irx;
 
 static int initdirs();
-static int get_part_list();
-static void load_hddmodules();
-static int hddinit();
-static int mountParty(char *party);
-static void unmountAllParts();
-static void unmountParty(int i);
-static int fix_hddpath(char *name);
+// static int get_part_list();
+// static void load_hddmodules();
+// static int hddinit();
+// static int mountParty(char *party);
+// static void unmountAllParts();
+// static void unmountParty(int i);
+// static int fix_hddpath(char *name);
 
 static void load_modules()
 {
@@ -71,7 +71,7 @@ static void load_modules()
 	
 	SifExecModuleBuffer(iomanX_irx, size_iomanX_irx, 0, NULL, NULL);
 	SifExecModuleBuffer(fileXio_irx, size_fileXio_irx, 0, NULL, NULL);
-	SifExecModuleBuffer(smscdvd_irx, size_smscdvd_irx, 0, NULL, NULL);
+	// SifExecModuleBuffer(smscdvd_irx, size_smscdvd_irx, 0, NULL, NULL);
 	SifExecModuleBuffer(usbd_irx, size_usbd_irx, 0, NULL, NULL);
 	SifExecModuleBuffer(usbhdfsd_irx, size_usbhdfsd_irx, 0, NULL, NULL);      
 	SifExecModuleBuffer(freesd_irx, size_freesd_irx, 0, NULL, NULL);
@@ -92,7 +92,7 @@ void ps2delay(int count)
 }
 int ps2quit()
 {
-    unmountAllParts();
+    // unmountAllParts();
 	
 	Exit(0);
     return 1;
@@ -103,6 +103,7 @@ int ps2init()
    SifInitRpc(0);
 #ifndef DEBUG
    while(!SifIopReset(NULL, 0)){};
+#endif
    while(!SifIopSync()){};
 
 	fioExit();
@@ -114,20 +115,19 @@ int ps2init()
 	SifInitRpc(0);
 	FlushCache(0);
 	FlushCache(2);
-#endif
    sbv_patch_enable_lmb();          
    //sbv_patch_disable_prefix_check();
    
    load_modules();
 
    ps2delay(5);
-#ifndef HOST 
-   fileXioInit();
-#endif
+// #ifndef HOST 
+//    fileXioInit();
+// #endif
 
    //init_handles();
    initdirs();
-   ps2time_init();
+//    ps2time_init();
    ps2delay(2);
    DPRINTF("-- PS2 inited --\n");
    return 1;
@@ -166,7 +166,6 @@ int Setup_Pad(void)
 {
 	int ret, i, port, state, modes;
 
-	padReset();
 	padInit(0);
 
 	for(port=0; port<2; port++){
@@ -191,79 +190,7 @@ int Setup_Pad(void)
 	return 1;
 }
 
-int fileXio_mode =  FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH;
-
-#ifdef HOST 
-static int ps2FioDread(int fd, struct ps2dirent *dir)
-{
-	fio_dirent_t buf;
-	int ret;
-	
-	ret = fioDread(fd, &buf);
-	
-	if(ret <= 0)
-		return ret;
-		
-	strcpy(dir->d_name, buf.name);
-	
-	switch(buf.stat.mode & FIO_SO_IFMT)  /* mode */
-    {
-        case FIO_SO_IFLNK:
-            dir->d_type = DT_LNK; break; 
-        case FIO_SO_IFREG:
-            dir->d_type = DT_REG; break;
-        case FIO_SO_IFDIR:
-            dir->d_type = DT_DIR; break;
-        default:
-            dir->d_type = DT_UNKNOWN; break;
-    }
-    
-    return ret;
-}
-#else
-static int ps2XioDread(int fd, struct ps2dirent *dir)
-{
-	iox_dirent_t buf;
-	int ret;
-	
-	ret = fileXioDread(fd, &buf);
-	
-	if(ret <= 0)
-		return ret;
-		
-	strcpy(dir->d_name, buf.name);
-	
-	switch(buf.stat.mode & FIO_S_IFMT)  /* mode */
-    {
-        case FIO_S_IFLNK:
-            dir->d_type = DT_LNK; break; 
-        case FIO_S_IFREG:
-            dir->d_type = DT_REG; break;
-        case FIO_S_IFDIR:
-            dir->d_type = DT_DIR; break;
-        default:
-            dir->d_type = DT_UNKNOWN; break;
-    }
-    
-    return ret;
-}
-#endif
-int ps2Dopen(char *path)
-{
-#ifdef HOST
-	return fioDopen(path);
-#else
-    return fileXioDopen(path);
-#endif
-}
-int ps2Dclose(int fd)
-{
-#ifdef HOST
-	return fioDclose(fd);
-#else
-    return fileXioDclose(fd);
-#endif
-}
+// int fileXio_mode =  FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH;
 
 #define MOUNT_LIMIT 4
 #define MAX_PARTITIONS 20
@@ -279,123 +206,119 @@ static char tmp[MAX_NAME];
 static int hddinited = 0;
 static char mainPath[MAX_NAME];
 
-PS2DIR * ps2Opendir(char *path)
-{
-    int fd = -1;
-	PS2DIR *ptr;
+// PS2DIR * ps2Opendir(char *path)
+// {
+//     int fd = -1;
+// 	PS2DIR *ptr;
 	
-	DPRINTF("opendir %s\n", path);
+// 	DPRINTF("opendir %s\n", path);
     
-    if(!strncmp(path, "MAIN", 4) || !strcmp(path, "hdd0:/"))
-    goto end;
+//     if(!strncmp(path, "MAIN", 4) || !strcmp(path, "hdd0:/"))
+//     goto end;
 	
-	fd = ps2Dopen(path);
+// 	fd = ps2Dopen(path);
 	
-	DPRINTF("fd %d\n", fd);
+// 	DPRINTF("fd %d\n", fd);
 		
-	if(fd < 0)
-		return NULL;
+// 	if(fd < 0)
+// 		return NULL;
 	
-	end:
-	ptr = (PS2DIR *)malloc(sizeof(PS2DIR));
-	ptr->d_entry = NULL;
+// 	end:
+// 	ptr = (PS2DIR *)malloc(sizeof(PS2DIR));
+// 	ptr->d_entry = NULL;
 	
-	if(ptr == NULL)
-		return NULL;
+// 	if(ptr == NULL)
+// 		return NULL;
 	
-	ptr->d_fd = fd;
-	strcpy(ptr->d_name, path);
+// 	ptr->d_fd = fd;
+// 	strcpy(ptr->d_name, path);
 	
-	return ptr;
-}
+// 	return ptr;
+// }
 
-int ps2Closedir(PS2DIR *d)
-{
-	int ret = 1;
+// int ps2Closedir(PS2DIR *d)
+// {
+// 	int ret = 1;
 	
-	if(d != NULL)
-	{
-		DPRINTF("ps2dclose %d \n", d->d_fd);
+// 	if(d != NULL)
+// 	{
+// 		DPRINTF("ps2dclose %d \n", d->d_fd);
 		
-		if(d->d_fd > 0)
-			ret = ps2Dclose(d->d_fd);
+// 		if(d->d_fd > 0)
+// 			ret = ps2Dclose(d->d_fd);
 		
-		free(d->d_entry);
-		free(d);
-	}
+// 		free(d->d_entry);
+// 		free(d);
+// 	}
 	
-	return ret;
-}
+// 	return ret;
+// }
 
 static int dir_ctr;
 static int part_ctr;
 
-struct ps2dirent *ps2Readdir(PS2DIR *d)
-{   
-    int ret;
+// struct ps2dirent *ps2Readdir(PS2DIR *d)
+// {   
+//     int ret;
 	
-	DPRINTF("ps2readdir %s \n", d->d_name);
+// 	DPRINTF("ps2readdir %s \n", d->d_name);
 	
-	if(d->d_entry == NULL)
-	{
-		d->d_entry = (struct ps2dirent *)malloc(sizeof(struct ps2dirent));
-	}
+// 	if(d->d_entry == NULL)
+// 	{
+// 		d->d_entry = (struct ps2dirent *)malloc(sizeof(struct ps2dirent));
+// 	}
 
-	if(!strncmp(d->d_name, "MAIN", 4))
-    {
-        if(dir_ctr > 4)
-        {
-            dir_ctr = 0;
-            return NULL;      
-        }
+// 	if(!strncmp(d->d_name, "MAIN", 4))
+//     {
+//         if(dir_ctr > 4)
+//         {
+//             dir_ctr = 0;
+//             return NULL;      
+//         }
                                       
-        switch(dir_ctr)
-        {
-              case 0:
-                   sprintf(d->d_entry->d_name, "mc0:/"); break;
-              case 1:
-                   sprintf(d->d_entry->d_name, "mc1:/"); break;
-              case 2:
-                   sprintf(d->d_entry->d_name, "mass:/"); break;
-              case 3:
-                   sprintf(d->d_entry->d_name, "cdfs:/"); break;
-              case 4:
-                   sprintf(d->d_entry->d_name, "hdd0:/"); break;
-              default:
-                      break;     
-        }  
-		d->d_entry->d_type = DT_DIR;
+//         switch(dir_ctr)
+//         {
+//               case 0:
+//                    sprintf(d->d_entry->d_name, "mc0:/"); break;
+//               case 1:
+//                    sprintf(d->d_entry->d_name, "mc1:/"); break;
+//               case 2:
+//                    sprintf(d->d_entry->d_name, "mass:/"); break;
+//               case 3:
+//                    sprintf(d->d_entry->d_name, "cdfs:/"); break;
+//               case 4:
+//                    sprintf(d->d_entry->d_name, "hdd0:/"); break;
+//               default:
+//                       break;     
+//         }  
+// 		d->d_entry->d_type = DT_DIR;
 		
-		dir_ctr++;                     
-    }
-    else if(!strncmp(d->d_name, "hdd", 3))
-    {
-    	if(part_ctr < 0)
-    	{
-    		part_ctr = allparts;
-      		return NULL;
-		}
-		strcpy(d->d_entry->d_name, partlist[part_ctr]);
-    	d->d_entry->d_type = DT_DIR;
+// 		dir_ctr++;                     
+//     }
+//     else if(!strncmp(d->d_name, "hdd", 3))
+//     {
+//     	if(part_ctr < 0)
+//     	{
+//     		part_ctr = allparts;
+//       		return NULL;
+// 		}
+// 		strcpy(d->d_entry->d_name, partlist[part_ctr]);
+//     	d->d_entry->d_type = DT_DIR;
     	
-    	part_ctr--;
-    }
-	else
-	{
-#ifdef HOST
-		ret = ps2FioDread(d->d_fd, d->d_entry);
-#else
-		ret = ps2XioDread(d->d_fd, d->d_entry);
-#endif
+//     	part_ctr--;
+//     }
+// 	else
+// 	{
+// 		ret = readdir(d->d_fd, d->d_entry);
 
-		if(ret <= 0)
-		{
-			return NULL;
-		}
-	}
+// 		if(ret <= 0)
+// 		{
+// 			return NULL;
+// 		}
+// 	}
 	
-	return d->d_entry;
-}
+// 	return d->d_entry;
+// }
 
 int ps2Chdir(char *path)
 {
@@ -434,27 +357,27 @@ int ps2Chdir(char *path)
     {
     	if(!strcmp(mainPath, "MAIN"))
     	{
-    		if(!strcmp(path, "hdd0:/"))
-			{
-				if(!hddinited)
-        		{
-					load_hddmodules();
-					hddinit();
-					get_part_list();       
-					hddinited = 1;            
-        		}
-    		}
+    		// if(!strcmp(path, "hdd0:/"))
+			// {
+			// 	if(!hddinited)
+        	// 	{
+			// 		load_hddmodules();
+			// 		hddinit();
+			// 		get_part_list();       
+			// 		hddinited = 1;            
+        	// 	}
+    		// }
     		
-    		strcpy(mainPath, path);
+    		// strcpy(mainPath, path);
 		}
 		else
 		{
 			if(!strcmp(mainPath, "hdd0:/"))
 			{
-        		sprintf(mainPath, "hdd0:%s", path);
+        		// sprintf(mainPath, "hdd0:%s", path);
         		
-				if(!fix_hddpath(mainPath))
-					strcpy(mainPath, "MAIN");
+				// if(!fix_hddpath(mainPath))
+				// 	strcpy(mainPath, "MAIN");
 			}
 			else
 			{
@@ -471,57 +394,57 @@ int ps2Chdir(char *path)
     return 1;
 }
 
-int ps2Getcwd(char *current_dir_name, int max_path)
-{ 
-    strcpy(current_dir_name, mainPath);
+// int ps2Getcwd(char *current_dir_name, int max_path)
+// { 
+//     strcpy(current_dir_name, mainPath);
     
-    return 1;
-}
+//     return 1;
+// }
 
-static int fix_hddpath(char *name)
-{
-     char *p;
-     int i;
+// static int fix_hddpath(char *name)
+// {
+//      char *p;
+//      int i;
 	 
-	 memset(tmp, 0, MAX_NAME);
+// 	 memset(tmp, 0, MAX_NAME);
 	 
-     if((p = strchr(name, '/')) != NULL) //partition name with directory
-     {
-		  for(i = 0; i < MAX_PARTITIONS; i++)
-          {
-              if(!strncmp((name + 5), partlist[i], strlen(partlist[i]) - 1)) //is partition on the list
-              {   
-					i = mountParty(partlist[i]);
+//      if((p = strchr(name, '/')) != NULL) //partition name with directory
+//      {
+// 		  for(i = 0; i < MAX_PARTITIONS; i++)
+//           {
+//               if(!strncmp((name + 5), partlist[i], strlen(partlist[i]) - 1)) //is partition on the list
+//               {   
+// 					i = mountParty(partlist[i]);
 					
-					if(i == -1)
-					return 0;
+// 					if(i == -1)
+// 					return 0;
 					
-					sprintf(tmp, "pfs%d:/%s", i, p+1);
-					strcpy(name, tmp);
+// 					sprintf(tmp, "pfs%d:/%s", i, p+1);
+// 					strcpy(name, tmp);
 					
-					DPRINTF("%s\n", name);
+// 					DPRINTF("%s\n", name);
 					
-					return 1;
-              }   
-          }             
-	 }
-	 else //only partition name
-	 {
-		i = mountParty(name + 5);
+// 					return 1;
+//               }   
+//           }             
+// 	 }
+// 	 else //only partition name
+// 	 {
+// 		i = mountParty(name + 5);
 		
-		DPRINTF("%s i = %d\n", name, i);
+// 		DPRINTF("%s i = %d\n", name, i);
 					
-		if(i == -1)
-		return 0;
+// 		if(i == -1)
+// 		return 0;
 					
-		sprintf(tmp, "pfs%d:/", i);
-		strcpy(name, tmp);
+// 		sprintf(tmp, "pfs%d:/", i);
+// 		strcpy(name, tmp);
 		
-		return 1;
-	 }
+// 		return 1;
+// 	 }
 	 
-	 return 0;
-}
+// 	 return 0;
+// }
 
 static int initdirs()
 {
@@ -534,198 +457,198 @@ static int initdirs()
    return 1;
 }
 
-static int get_part_list()
-{
-   iox_dirent_t dirEnt;
-   int fd;     
+// static int get_part_list()
+// {
+//    iox_dirent_t dirEnt;
+//    int fd;     
    
-   fd = fileXioDopen("hdd0:");
+//    fd = fileXioDopen("hdd0:");
    
-   part_ctr = -1;
+//    part_ctr = -1;
                
-    while(fileXioDread(fd, &dirEnt) > 0 )
-    {             
-        if(part_ctr >= MAX_PARTITIONS)
-		{
-           part_ctr = MAX_PARTITIONS;
-           break;         
-        }
+//     while(fileXioDread(fd, &dirEnt) > 0 )
+//     {             
+//         if(part_ctr >= MAX_PARTITIONS)
+// 		{
+//            part_ctr = MAX_PARTITIONS;
+//            break;         
+//         }
 		
-        if((dirEnt.stat.attr != ATTR_MAIN_PARTITION) 
-				|| (dirEnt.stat.mode != FS_TYPE_PFS))
-			continue;
+//         if((dirEnt.stat.attr != ATTR_MAIN_PARTITION) 
+// 				|| (dirEnt.stat.mode != FS_TYPE_PFS))
+// 			continue;
 
-		//Patch this to see if new CB versions use valid PFS format
-		//NB: All CodeBreaker versions up to v9.3 use invalid formats
-		if(!strncmp(dirEnt.name, "PP.",3))
-        {
-			int len = strlen(dirEnt.name);
-			if(!strcmp(dirEnt.name+len-4, ".PCB"))
-				continue;
-		}
+// 		//Patch this to see if new CB versions use valid PFS format
+// 		//NB: All CodeBreaker versions up to v9.3 use invalid formats
+// 		if(!strncmp(dirEnt.name, "PP.",3))
+//         {
+// 			int len = strlen(dirEnt.name);
+// 			if(!strcmp(dirEnt.name+len-4, ".PCB"))
+// 				continue;
+// 		}
 
-		if(!strncmp(dirEnt.name, "__", 2) &&
-			strcmp(dirEnt.name, "__boot") &&
-			strcmp(dirEnt.name, "__net") &&
-			strcmp(dirEnt.name, "__system") &&
-			strcmp(dirEnt.name, "__sysconf") &&
-			strcmp(dirEnt.name, "__common"))
-			continue;
+// 		if(!strncmp(dirEnt.name, "__", 2) &&
+// 			strcmp(dirEnt.name, "__boot") &&
+// 			strcmp(dirEnt.name, "__net") &&
+// 			strcmp(dirEnt.name, "__system") &&
+// 			strcmp(dirEnt.name, "__sysconf") &&
+// 			strcmp(dirEnt.name, "__common"))
+// 			continue;
 		
-		part_ctr++;
-		allparts = part_ctr;
-		strcpy(partlist[part_ctr], dirEnt.name);
-   }
+// 		part_ctr++;
+// 		allparts = part_ctr;
+// 		strcpy(partlist[part_ctr], dirEnt.name);
+//    }
    
-   fileXioDclose(fd);
+//    fileXioDclose(fd);
    
-   return 1;
-}
+//    return 1;
+// }
 
-static void load_hddmodules()
-{
-   	// set the arguments for loading 'ps2fs'
-	// -m 4  (maxmounts 4)
-	// -o 10 (maxopen 10)
-	// -n 40 (number of buffers 40)
-   static char pfsarg[] = "-m" "\0" "4" "\0" "-o" "\0" "10" "\0" "-n" "\0" "40";
-    // set the arguments for loading 'ps2hdd'
-	// -o 4 (maxopen 4)
-	// -n 20 (cachesize 20) 
-   static char hddarg[] = "-o" "\0" "4" "\0" "-n" "\0" "20";
+// static void load_hddmodules()
+// {
+//    	// set the arguments for loading 'ps2fs'
+// 	// -m 4  (maxmounts 4)
+// 	// -o 10 (maxopen 10)
+// 	// -n 40 (number of buffers 40)
+//    static char pfsarg[] = "-m" "\0" "4" "\0" "-o" "\0" "10" "\0" "-n" "\0" "40";
+//     // set the arguments for loading 'ps2hdd'
+// 	// -o 4 (maxopen 4)
+// 	// -n 20 (cachesize 20) 
+//    static char hddarg[] = "-o" "\0" "4" "\0" "-n" "\0" "20";
  
-#ifndef DEBUG
-    SifExecModuleBuffer(poweroff_irx, size_poweroff_irx, 0, NULL, NULL);
-    SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, NULL);
-#endif
-    SifExecModuleBuffer(ps2atad_irx, size_ps2atad_irx, 0, NULL, NULL);
-	SifExecModuleBuffer(ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, NULL);
-	SifExecModuleBuffer(ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, NULL);
-}
+// #ifndef DEBUG
+//     SifExecModuleBuffer(poweroff_irx, size_poweroff_irx, 0, NULL, NULL);
+//     SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, NULL);
+// #endif
+//     SifExecModuleBuffer(ps2atad_irx, size_ps2atad_irx, 0, NULL, NULL);
+// 	SifExecModuleBuffer(ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, NULL);
+// 	SifExecModuleBuffer(ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, NULL);
+// }
 
-static int hddinit()
-{
-	if(hddCheckPresent() < 0)
-	{
-		DPRINTF("NO HDD FOUND!\n");
-    	return -1;
-    }
-	else
-	{
-		DPRINTF("Found HDD!\n");
-	}
+// static int hddinit()
+// {
+// 	if(hddCheckPresent() < 0)
+// 	{
+// 		DPRINTF("NO HDD FOUND!\n");
+//     	return -1;
+//     }
+// 	else
+// 	{
+// 		DPRINTF("Found HDD!\n");
+// 	}
 
-	if(hddCheckFormatted() < 0)
-    {
-		DPRINTF("HDD Not Formatted!\n");
-		return -1;	
-	}
-    else
-    {
-    	DPRINTF("HDD Is Formatted!\n");
-	}
+// 	if(hddCheckFormatted() < 0)
+//     {
+// 		DPRINTF("HDD Not Formatted!\n");
+// 		return -1;	
+// 	}
+//     else
+//     {
+//     	DPRINTF("HDD Is Formatted!\n");
+// 	}
 
     
-    return 1;
-}
+//     return 1;
+// }
 
-static int mountParty(char *party)
-{
-	int i, j;
-	char pfs_str[6];
+// static int mountParty(char *party)
+// {
+// 	int i, j;
+// 	char pfs_str[6];
 	
-	for(i = 0; i < MOUNT_LIMIT; i++) //check already mounted PFS indexes
-	{
-		if(!strcmp(party, mountedParty[i]))
-			goto return_i;
-	}
+// 	for(i = 0; i < MOUNT_LIMIT; i++) //check already mounted PFS indexes
+// 	{
+// 		if(!strcmp(party, mountedParty[i]))
+// 			goto return_i;
+// 	}
 
-	for(i = 0, j = -1; i < MOUNT_LIMIT; i++) //search for a free PFS index
-	{ 
-		if(mountedParty[i][0] == 0)
-		{
-			j = i;
-			break;
-		}
-	}
+// 	for(i = 0, j = -1; i < MOUNT_LIMIT; i++) //search for a free PFS index
+// 	{ 
+// 		if(mountedParty[i][0] == 0)
+// 		{
+// 			j = i;
+// 			break;
+// 		}
+// 	}
 
-	if(j == -1) //search for a suitable PFS index to unmount
-	{
-		for(i = 0; i < MOUNT_LIMIT; i++)
-		{
-			if((i != latestMount) && (i != alwaysMounted))
-			{
-				j = i;
-				break;
-			}
-		}
-		unmountParty(j);
-	}
+// 	if(j == -1) //search for a suitable PFS index to unmount
+// 	{
+// 		for(i = 0; i < MOUNT_LIMIT; i++)
+// 		{
+// 			if((i != latestMount) && (i != alwaysMounted))
+// 			{
+// 				j = i;
+// 				break;
+// 			}
+// 		}
+// 		unmountParty(j);
+// 	}
 
-	i = j;
-	strcpy(pfs_str, "pfs0:");
+// 	i = j;
+// 	strcpy(pfs_str, "pfs0:");
 
-	pfs_str[3] = '0' + i;
+// 	pfs_str[3] = '0' + i;
 	
-	memset(tmp, 0, MAX_NAME);
+// 	memset(tmp, 0, MAX_NAME);
 	
-	sprintf(tmp, "hdd0:%s", party);
+// 	sprintf(tmp, "hdd0:%s", party);
 	
-	DPRINTF("Mount %s as %s\n", tmp, pfs_str);
+// 	DPRINTF("Mount %s as %s\n", tmp, pfs_str);
 	
-	if(fileXioMount(pfs_str, tmp, FIO_MT_RDWR) < 0)
-	{
-		DPRINTF("Mount failed 1\n");
-		for(i = 0; i <= MOUNT_LIMIT; i++)
-		{
-			if((i != latestMount) && (i != alwaysMounted))
-			{
-				DPRINTF("Mount try again %d\n", i);
-				unmountParty(i);
-				pfs_str[3] = '0' + i;
-				if(fileXioMount(pfs_str, tmp, FIO_MT_RDWR) >= 0)
-					break;
-			}
-		}
-		DPRINTF("Mount failed 2\n");
-		if(i > MOUNT_LIMIT)
-			return -1;
-	}
-	strcpy(mountedParty[i], party);
-return_i:
-	if(i != alwaysMounted)
-	latestMount = i;
-	return i;
-}
+// 	if(fileXioMount(pfs_str, tmp, FIO_MT_RDWR) < 0)
+// 	{
+// 		DPRINTF("Mount failed 1\n");
+// 		for(i = 0; i <= MOUNT_LIMIT; i++)
+// 		{
+// 			if((i != latestMount) && (i != alwaysMounted))
+// 			{
+// 				DPRINTF("Mount try again %d\n", i);
+// 				unmountParty(i);
+// 				pfs_str[3] = '0' + i;
+// 				if(fileXioMount(pfs_str, tmp, FIO_MT_RDWR) >= 0)
+// 					break;
+// 			}
+// 		}
+// 		DPRINTF("Mount failed 2\n");
+// 		if(i > MOUNT_LIMIT)
+// 			return -1;
+// 	}
+// 	strcpy(mountedParty[i], party);
+// return_i:
+// 	if(i != alwaysMounted)
+// 	latestMount = i;
+// 	return i;
+// }
 
-static void unmountParty(int party_ix)
-{
-	char pfs_str[6];
+// static void unmountParty(int party_ix)
+// {
+// 	char pfs_str[6];
 
-	strcpy(pfs_str, "pfs0:");
-	pfs_str[3] += party_ix;
+// 	strcpy(pfs_str, "pfs0:");
+// 	pfs_str[3] += party_ix;
 	
-	DPRINTF("Umount party %s\n", pfs_str);
+// 	DPRINTF("Umount party %s\n", pfs_str);
 	
-	if(fileXioUmount(pfs_str) < 0)
-		return;
+// 	if(fileXioUmount(pfs_str) < 0)
+// 		return;
 		
-	if(party_ix < MOUNT_LIMIT)
-		mountedParty[party_ix][0] = 0;
+// 	if(party_ix < MOUNT_LIMIT)
+// 		mountedParty[party_ix][0] = 0;
 
-	if(latestMount == party_ix)
-		latestMount = -1;
-}
+// 	if(latestMount == party_ix)
+// 		latestMount = -1;
+// }
 
-static void unmountAllParts()
-{
-    int i;
+// static void unmountAllParts()
+// {
+//     int i;
 	
-    for(i = 0; i < MOUNT_LIMIT; i++)
-		unmountParty(i);
+//     for(i = 0; i < MOUNT_LIMIT; i++)
+// 		unmountParty(i);
     
-    fileXioStop();
-}
+//     fileXioStop();
+// }
 
 int check_dir(char *path, int is_main)
 {
@@ -735,46 +658,46 @@ int check_dir(char *path, int is_main)
 	memset(tmp, 0, MAX_NAME);
 	//strcpy(tmp, path);
 	
-	if(!strncmp(path, "hdd0:", 5))
-    {
+	// if(!strncmp(path, "hdd0:", 5))
+    // {
     	
-        if(!hddinited)
-        {
-           load_hddmodules();
-           hddinit();
-           get_part_list();       
-           hddinited = 1;            
-        }
+    //     if(!hddinited)
+    //     {
+    //        load_hddmodules();
+    //        hddinit();
+    //        get_part_list();       
+    //        hddinited = 1;            
+    //     }
 		
-		if(path[5] == '/')
-			sprintf(path, "hdd0:%s", (path + 6));
+	// 	if(path[5] == '/')
+	// 		sprintf(path, "hdd0:%s", (path + 6));
 			
-		//sprintf(partlist[0], "+Test");
+	// 	//sprintf(partlist[0], "+Test");
 		
-        for(i = 0; i < MAX_PARTITIONS; i++)
-        {
-            if(!strncmp((path + 5), partlist[i], strlen(partlist[i]) - 1))
-            {		
-					if(!fix_hddpath(path))
-					return 0;
+    //     for(i = 0; i < MAX_PARTITIONS; i++)
+    //     {
+    //         if(!strncmp((path + 5), partlist[i], strlen(partlist[i]) - 1))
+    //         {		
+	// 				if(!fix_hddpath(path))
+	// 				return 0;
 					
-					if(is_main)
-					alwaysMounted = i;
+	// 				if(is_main)
+	// 				alwaysMounted = i;
 					
-					break;
-            }    
-        }                               
-    }
+	// 				break;
+    //         }    
+    //     }                               
+    // }
 
 	
-	fd = ps2Dopen(path);
+	fd = opendir(path);
 
-	DPRINTF("dopen %s fd %d\n", path, fd);
+	DPRINTF("opendir %s fd %d\n", path, fd);
 
 	if(fd > 0)
 	{
 		//DPRINTF("close %s\n", path);
-		ps2Dclose(fd);
+		closedir(fd);
 		
 		if((p=strrchr(path, '/'))!=NULL && *(p+1) == 0)
     		*p = 0;
@@ -787,17 +710,17 @@ int check_dir(char *path, int is_main)
 	return 0;
 }
 
-int ps2DebugScreenInit()
-{
-#ifndef HOST
-	init_scr();
-	scr_clear();
-	scr_printf("\n\n\n          ");
+// int ps2DebugScreenInit()
+// {
+// #ifndef HOST
+// 	init_scr();
+// 	scr_clear();
+// 	scr_printf("\n\n\n          ");
 	
-	return 1;
-#endif
-	return 0;
-}
+// 	return 1;
+// #endif
+// 	return 0;
+// }
 
 const char cnf_path_mc[] = "mc0:/PS2GBA/MAIN.CFG";
 
@@ -840,31 +763,32 @@ int ps2GetMainPath(char *path, char *argv)
 	}
 	
 	//first check hd boot path
-	if(!strncmp(argv, "hdd0:", 5))
-	{
-		//hdd0:__sysconf:pfs:/FMCB/FMCB_configurator.elf
-		if((p=strrchr(argv, ':'))!=NULL)
-		{
+	// if(!strncmp(argv, "hdd0:", 5))
+	// {
+	// 	//hdd0:__sysconf:pfs:/FMCB/FMCB_configurator.elf
+	// 	if((p=strrchr(argv, ':'))!=NULL)
+	// 	{
 			
-			sprintf(current_str + (p - argv) - 4, "%s", argv + (p - argv) + 1);
+	// 		sprintf(current_str + (p - argv) - 4, "%s", argv + (p - argv) + 1);
 			
-			if((p=strrchr(current_str, '/')) != NULL)
-			{
-				*p = 0;
-			}
+	// 		if((p=strrchr(current_str, '/')) != NULL)
+	// 		{
+	// 			*p = 0;
+	// 		}
 			
-			strcpy(path, current_str);
-		}
-		else
-			return 0; 
-	}
-	else if(!strncmp(argv, "cdfs:", 5) || !strncmp(argv, "cdrom", 5))
-	{
-		mkdir("mc0:/PS2GBA");
-		mkdir("mc0:/PS2GBA/REGBA");
-		strcpy(path, "mc0:/PS2GBA/REGBA");
-	}
-	else
+	// 		strcpy(path, current_str);
+	// 	}
+	// 	else
+	// 		return 0; 
+	// }
+	// else 
+	// if(!strncmp(argv, "cdfs:", 5) || !strncmp(argv, "cdrom", 5))
+	// {
+	// 	mkdir("mc0:/PS2GBA", 0750);
+	// 	mkdir("mc0:/PS2GBA/REGBA", 0750);
+	// 	strcpy(path, "mc0:/PS2GBA/REGBA");
+	// }
+	// else
 	{
 		memset(path , 0, 255);
 		
@@ -930,18 +854,5 @@ char *ps2fgets(char *str, int size, FILE_TAG_TYPE stream)
 	}
 	
 	return NULL;
-}
-
-int clock_gettime(struct timespec *ts)
-{
-	struct timeval tv;
-	int ret;
-	
-	ret = ps2time_gettimeofday(&tv, NULL);
-	
-	ts->tv_sec = tv.tv_sec;
-	ts->tv_nsec = tv.tv_usec * 1000;
-	
-	return ret;
 }
 

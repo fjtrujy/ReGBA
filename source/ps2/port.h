@@ -27,7 +27,7 @@ typedef int FILE_TAG_TYPE;
 
 typedef struct timespec timespec;
 
-int errno;
+extern int errno;
 
 #include <sys/types.h>
 #include <osd_config.h>
@@ -36,17 +36,12 @@ int errno;
 #include <dmaKit.h>
 #include <gsToolkit.h>
 #include <libpad.h>
-#include <fileXio_rpc.h>
-#include <fileXio.h>
-#include <fileio.h>
-#include <libps2time.h>
+// #include <fileXio_rpc.h>
+// #include <fileXio.h>
+// #include <fileio.h>
+// #include <libps2time.h>
 
 #include "ps2.h"
-
-struct timespec {
-    time_t   tv_sec;        /* seconds */
-    long     tv_nsec;       /* nanoseconds */
-};
 
 /* Tuning parameters for the Supercard DSTwo version of gpSP */
 /* Its processor is an Ingenic JZ4740 at 360 MHz with 32 MiB of RAM */
@@ -60,62 +55,38 @@ struct timespec {
 
 #define MAX_AUTO_FRAMESKIP 4
 
-#define FILE_OPEN_APPEND (O_CREAT | O_APPEND | O_TRUNC)
+#define FILE_OPEN_APPEND ("a+")
 
-#define FILE_OPEN_READ (O_RDONLY)
+#define FILE_OPEN_READ ("rb")
 
-#define FILE_OPEN_WRITE (O_CREAT | O_WRONLY | O_TRUNC)
-
-#ifdef HOST
+#define FILE_OPEN_WRITE ("wb")
 
 #define FILE_OPEN(filename_tag, filename, mode)                             \
-  filename_tag = fioOpen(filename, FILE_OPEN_##mode)                        \
+  filename_tag = fopen(filename, FILE_OPEN_##mode)                          \
 
 #define FILE_CHECK_VALID(filename_tag)                                      \
-  (filename_tag > 0)                                        				\
-
-#define FILE_CLOSE(filename_tag)                                            \
-  fioClose(filename_tag)                                                    \
-
-#define FILE_DELETE(filename)                                               \
-  fioRemove(filename) && fioRmdir(filename)                                 \
-
-#define FILE_READ(filename_tag, buffer, size)                               \
-  fioRead(filename_tag, buffer, size)                                       \
-
-#define FILE_WRITE(filename_tag, buffer, size)                              \
-  fioWrite(filename_tag, buffer, size)                                      \
-
-#define FILE_SEEK(filename_tag, offset, type)                               \
-  fioLseek(filename_tag, offset, type)                                      \
-
-#else
-
-#define FILE_OPEN(filename_tag, filename, mode)                             \
-  filename_tag = fileXioOpen(filename, FILE_OPEN_##mode, fileXio_mode)      \
-
-#define FILE_CHECK_VALID(filename_tag)                                      \
-  (filename_tag > 0)                                        				\
-
-#define FILE_CLOSE(filename_tag)                                            \
-  fileXioClose(filename_tag)                                                \
-
-#define FILE_DELETE(filename)                                               \
-  fileXioRemove(filename)                                                   \
-
-#define FILE_READ(filename_tag, buffer, size)                               \
-  fileXioRead(filename_tag, buffer, size)                                   \
-
-#define FILE_WRITE(filename_tag, buffer, size)                              \
-  fileXioWrite(filename_tag, buffer, size)                                  \
-
-#define FILE_SEEK(filename_tag, offset, type)                               \
-  fileXioLseek(filename_tag, offset, type)                                  \
-
-#endif
+  (filename_tag != FILE_TAG_INVALID)                                        \
 
 #define FILE_TAG_INVALID                                                    \
-  (-1)                                                                      \
+  (NULL)                                                                    \
+
+#define FILE_CLOSE(filename_tag)                                            \
+  fclose(filename_tag)                                                      \
+
+#define FILE_DELETE(filename)                                               \
+  unlink(filename)                                                          \
+
+#define FILE_READ(filename_tag, buffer, size)                               \
+  fread(buffer, 1, size, filename_tag)                                      \
+
+#define FILE_WRITE(filename_tag, buffer, size)                              \
+  fwrite(buffer, 1, size, filename_tag)                                     \
+
+#define FILE_SEEK(filename_tag, offset, type)                               \
+  fseek(filename_tag, offset, type)                                         \
+
+#define FILE_TELL(filename_tag)                                             \
+  ftell(filename_tag)                                                       \
 
 #define FILE_GETS(str, size, filename_tag)                                  \
   ps2fgets(str, size, filename_tag)                                         \

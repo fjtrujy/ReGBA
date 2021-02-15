@@ -336,7 +336,7 @@ enum GUI_Action GetGUIAction()
 	}
 	
 	struct timespec Now;
-    clock_gettime(&Now);
+    time(&Now);
 	if (Result == GUI_ACTION_NONE || LastAction != Result || ActionRepeatState == BUTTON_NOT_HELD)
 	{
 		LastAction = Result;

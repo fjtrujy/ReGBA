@@ -27,28 +27,28 @@ extern int size_gba_bios_bin;
 
 int32_t load_bios_mem(u8* data, int size);
 
-TIMER_TYPE timer[4];
+extern TIMER_TYPE timer[4];
 
 frameskip_type current_frameskip_type = auto_frameskip;
-u32 frameskip_value = 4;
-u32 random_skip = 0;
-u32 global_cycles_per_instruction = 3;
-u32 skip_next_frame = 0;
+uint32_t frameskip_value = 4;
+uint32_t random_skip = 0;
+uint32_t global_cycles_per_instruction = 3;
+uint32_t skip_next_frame = 0;
 
-u32 frameskip_counter = 0;
+uint32_t frameskip_counter = 0;
 
-u32 cpu_ticks = 0;
-u32 frame_ticks = 0;
+uint32_t cpu_ticks = 0;
+uint32_t frame_ticks = 0;
 
-u32 execute_cycles = 960;
-s32 video_count = 960;
-u32 ticks;
+uint32_t execute_cycles = 960;
+int32_t video_count = 960;
+uint32_t ticks;
 
-u32 arm_frame = 0;
-u32 thumb_frame = 0;
-u32 last_frame = 0;
+uint32_t arm_frame = 0;
+uint32_t thumb_frame = 0;
+uint32_t last_frame = 0;
 
-u32 synchronize_flag = 1;
+uint32_t synchronize_flag = 1;
 
 #define check_count(count_var)																\
 	if(count_var < execute_cycles)															\
@@ -101,7 +101,7 @@ static bool caches_inited = false;
 
 void init_main()
 {
-	u32 i;
+	uint32_t i;
 
 	skip_next_frame = 0;
 
@@ -151,15 +151,7 @@ int main(int argc, char *argv[])
 	init_input();
 	init_audio();
 
-#ifdef HOST
 	getcwd(main_path, MAX_PATH);
-#else
-	if(!ps2GetMainPath(main_path, (char *)argv[0]))
-	{
-		ShowErrorScreen("Wrong Path: %s \n", main_path);
-		error_quit();
-	}
-#endif
 
 	ReGBA_LoadSettings("global_config", false);
 	reload_video();
@@ -194,7 +186,8 @@ int main(int argc, char *argv[])
 
 #ifdef HOST
 	argc = 2;
-	argv[1] = "host:Dragon Ball Z - Buu's Fury.zip";
+	// argv[1] = "host:Dragon Ball Z - Buu's Fury.zip";
+	argv[1] = "host:Bomb Jack.gba";
 #endif
 
 	if(argc > 1)
@@ -264,7 +257,7 @@ loadrom:
 	return 0;
 }
 
-u32 update_gba()
+uint32_t update_gba()
 {
 	IRQ_TYPE irq_raised = IRQ_NONE;
 	do
@@ -289,8 +282,8 @@ u32 update_gba()
 
 		if(video_count <= 0)
 		{
-			u32 vcount = io_registers[REG_VCOUNT];
-			u32 dispstat = io_registers[REG_DISPSTAT];
+			uint32_t vcount = io_registers[REG_VCOUNT];
+			uint32_t dispstat = io_registers[REG_DISPSTAT];
 
 			if((dispstat & 0x02) == 0)
 			{
@@ -300,7 +293,7 @@ u32 update_gba()
 
 				if((dispstat & 0x01) == 0)
 				{
-					u32 i;
+					uint32_t i;
 
 					update_scanline();
 
@@ -326,7 +319,7 @@ u32 update_gba()
 				if(vcount == 160)
 				{
 					// Transition from vrefresh to vblank
-					u32 i;
+					uint32_t i;
 
 					dispstat |= 0x01;
 					if(dispstat & 0x8)
@@ -335,13 +328,13 @@ u32 update_gba()
 					}
 
 					affine_reference_x[0] =
-					 (s32)(ADDRESS32(io_registers, 0x28) << 4) >> 4;
+					 (int32_t)(ADDRESS32(io_registers, 0x28) << 4) >> 4;
 					affine_reference_y[0] =
-					 (s32)(ADDRESS32(io_registers, 0x2C) << 4) >> 4;
+					 (int32_t)(ADDRESS32(io_registers, 0x2C) << 4) >> 4;
 					affine_reference_x[1] =
-					 (s32)(ADDRESS32(io_registers, 0x38) << 4) >> 4;
+					 (int32_t)(ADDRESS32(io_registers, 0x38) << 4) >> 4;
 					affine_reference_y[1] =
-					 (s32)(ADDRESS32(io_registers, 0x3C) << 4) >> 4;
+					 (int32_t)(ADDRESS32(io_registers, 0x3C) << 4) >> 4;
 			 
 					for(i = 0; i < 4; i++)
 					{
@@ -446,21 +439,6 @@ size_t FILE_LENGTH(FILE_TAG_TYPE fp)
 	pos = FILE_SEEK(fp, 0, SEEK_SET);
 	
 	return length;
-}
-
-void delay_us(u32 us_count)
-{
-	//SDL_Delay(us_count / 1000); // for dingux
-	// sleep(0);
-}
-
-void get_ticks_us(u64 *ticks_return)
-{
-	 struct timeval current_time;
-	 ps2time_gettimeofday(&current_time, NULL);
-
-	 *ticks_return =
-	 (u64)current_time.tv_sec * 1000000 + current_time.tv_usec;
 }
 
 void change_ext(const char *src, char *buffer, char *extension)
