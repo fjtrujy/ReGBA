@@ -1,7 +1,7 @@
 
 EE_BIN = ReGBA.elf
 
-EE_CFLAGS += -g -O0 -DDEBUG -DHOST -DMIPS_XBURST -DLOAD_ALL_ROM -DCHEATS -DGIT_VERSION=$(shell git describe --always)
+EE_CFLAGS += -g -O0 -DwHOST -DMIPS_XBURST -DLOAD_ALL_ROM -DCHEATS -DGIT_VERSION=$(shell git describe --always)
 EE_INCS += -I./ -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include -I../ -I../mips
 EE_LDFLAGS += -L$(PS2DEV)/gskit/lib -L$(PS2SDK)/ports/lib 
 EE_LIBS += -lpatches -lgskit -ldmakit -laudsrv -lpad -lz -lcdvd
